@@ -23,6 +23,13 @@ The hackathon version focuses on four high-contrast studies in France and Italy:
 - Jura
 - Collio
 
+The interface separates three linked entities rather than treating a region as
+one homogeneous wine: the appellation owns place and legal rules; the grape
+database owns variety-level chemistry; and a wine expression joins place,
+grape and vinification. This lets Collio Ribolla Gialla with extended skin
+contact remain distinct from a directly pressed Collio Chardonnay while both
+retain the same geographic context.
+
 The core experience combines a switchable evidence atlas, a Barolo/Chianti
 Classico comparison sheet, cited region profiles, and appellation-law
 challenges. A guided synthesis route uses GPT-5.6 Sol for cross-domain analysis

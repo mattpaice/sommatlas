@@ -8,7 +8,6 @@ import {
   Atom,
   BookOpen,
   CircleHelp,
-  FlaskConical,
   MapPinned,
   Palette,
   Scale,
@@ -20,6 +19,7 @@ import { MessageResponse } from "@/components/ai-elements/message";
 import { demoFallbacks } from "@/data/demo-fallback";
 import { mapContextPoints, type MapContextPoint } from "@/data/map-context";
 import { baroloMolecularSignals, type MolecularLayer } from "@/data/molecular-signals";
+import { wineExpressions, type WineExpression } from "@/data/wine-expressions";
 import { projectCountryPoint, type MapCountry } from "@/lib/map-projection";
 import type { Challenge, Claim, Region, RegionId, Source } from "@/lib/schemas";
 
@@ -30,15 +30,14 @@ type AtlasExperienceProps = {
   challenges: Challenge[];
 };
 
-const layers = [
-  { id: "geology", label: "Geology", icon: MapPinned, colour: "var(--ponca)" },
+const profileTabs = [
+  { id: "place", label: "Place", icon: MapPinned, colour: "var(--ponca)" },
   { id: "chemistry", label: "Chemistry", icon: Atom, colour: "var(--oxidised-gold)" },
-  { id: "phenolics", label: "Phenolics", icon: FlaskConical, colour: "var(--garnet)" },
-  { id: "palate", label: "Palate", icon: Wine, colour: "var(--sage)" },
+  { id: "structure", label: "Structure", icon: Wine, colour: "var(--garnet)" },
   { id: "rules", label: "Rules", icon: ShieldCheck, colour: "var(--limestone)" },
 ] as const;
 
-type LayerId = (typeof layers)[number]["id"];
+type ProfileTabId = (typeof profileTabs)[number]["id"];
 
 const themes = [
   { id: "harvest", label: "Harvest", note: "Plum & saffron", swatches: ["#dc6d55", "#e0ae48", "#98aa6f"] },
@@ -58,29 +57,30 @@ function confidenceTone(confidence: Claim["confidence"]) {
       : "border-white/15 bg-white/5 text-[color:var(--muted)]";
 }
 
-function claimMatchesLayer(claim: Claim, layer: LayerId) {
-  if (layer === "rules") return claim.claimType === "legal";
-  if (layer === "geology") {
+function claimMatchesTab(claim: Claim, tab: ProfileTabId) {
+  if (tab === "rules") return claim.claimType === "legal";
+  if (tab === "place") {
     return claim.claimType === "geology" || claim.id === "barolo-site-before-style";
   }
-  if (layer === "palate") {
+  if (tab === "structure") {
+    if (claim.subjectId === "barolo") {
+      return ["nebbiolo-pigment-tannin-pattern", "nebbiolo-anthocyanin-profile", "nebbiolo-named-anthocyanins", "nebbiolo-proanthocyanidin-building-blocks"].includes(claim.id);
+    }
     return ["editorial_interpretation", "common_practice", "historical_practice"].includes(claim.claimType);
   }
-  if (claim.subjectId === "barolo" && layer === "chemistry") {
+  if (claim.subjectId === "barolo" && tab === "chemistry") {
     return ["nebbiolo-norisoprenoid-precursors", "nebbiolo-terpenoid-wine-profile", "nebbiolo-aroma-not-one-to-one", "nebbiolo-oxygen-ageing-network"].includes(claim.id);
-  }
-  if (claim.subjectId === "barolo" && layer === "phenolics") {
-    return ["nebbiolo-pigment-tannin-pattern", "nebbiolo-anthocyanin-profile", "nebbiolo-named-anthocyanins", "nebbiolo-proanthocyanidin-building-blocks"].includes(claim.id);
   }
   return claim.claimType === "measured" || claim.claimType === "published_association";
 }
 
 export function AtlasExperience({ regions, claims, sources, challenges }: AtlasExperienceProps) {
-  const [activeLayer, setActiveLayer] = useState<LayerId>("geology");
+  const [activeTab, setActiveTab] = useState<ProfileTabId>("place");
   const [theme, setTheme] = useState<ThemeId>("harvest");
   const [selectedId, setSelectedId] = useState<RegionId>("barolo");
   const [focusedContextId, setFocusedContextId] = useState<MapContextPoint["id"] | null>(null);
   const [activeMapTooltipId, setActiveMapTooltipId] = useState<string | null>(null);
+  const [expressionId, setExpressionId] = useState("barolo-nebbiolo");
   const [comparisonOpen, setComparisonOpen] = useState(false);
   const [challengeAnswer, setChallengeAnswer] = useState<boolean | null>(null);
   const [mode, setMode] = useState<"sol" | "terra">("sol");
@@ -95,31 +95,32 @@ export function AtlasExperience({ regions, claims, sources, challenges }: AtlasE
     () => claims.filter((claim) => claim.subjectId === selected?.id && claim.status === "verified"),
     [claims, selected],
   );
-  const layerClaims = useMemo(() => {
-    const relevant = selectedClaims.filter((claim) => claimMatchesLayer(claim, activeLayer));
-    return relevant.length > 0 ? relevant : selectedClaims;
-  }, [activeLayer, selectedClaims]);
+  const tabClaims = useMemo(() => {
+    return selectedClaims.filter((claim) => claimMatchesTab(claim, activeTab));
+  }, [activeTab, selectedClaims]);
   const selectedSources = useMemo(() => {
-    const ids = new Set(layerClaims.flatMap((claim) => claim.sourceIds));
+    const ids = new Set(tabClaims.flatMap((claim) => claim.sourceIds));
     return sources.filter((source) => ids.has(source.id));
-  }, [layerClaims, sources]);
+  }, [tabClaims, sources]);
   const activeChallenge = challenges.find((challenge) => challenge.regionId === selected?.id) ?? challenges[0];
   const barolo = regions.find((region) => region.id === "barolo");
   const chianti = regions.find((region) => region.id === "chianti-classico");
 
   if (!selected || !activeChallenge || !barolo || !chianti) return null;
 
-  const active = layers.find((layer) => layer.id === activeLayer) ?? layers[0];
+  const active = profileTabs.find((tab) => tab.id === activeTab) ?? profileTabs[0];
+  const availableExpressions = wineExpressions.filter((expression) => expression.regionId === selected.id);
+  const selectedExpression = availableExpressions.find((expression) => expression.id === expressionId) ?? availableExpressions[0];
   const synthesisPrompt = mode === "sol"
-    ? "How do Barolo and Chianti Classico diverge when colour, tannin, geology and legal constraints are considered together?"
-    : "Explain why Barolo can look pale but feel so tannic.";
+    ? `Build an evidence-bounded account of ${selected.name} as ${selectedExpression?.label ?? "the selected expression"}: separate geology, grape chemistry, vinification and legal rules.`
+    : `Explain the most useful chemical and structural distinction in ${selected.name} as ${selectedExpression?.label ?? "the selected expression"}.`;
   const latestAnswer = [...messages]
     .reverse()
     .find((message) => message.role === "assistant")
     ?.parts.filter((part) => part.type === "text")
     .map((part) => part.text)
     .join("");
-  const fallbackAnswer = error
+  const fallbackAnswer = error && selected.id === "barolo"
     ? demoFallbacks.find((fallback) => fallback.id === (mode === "sol" ? "compare-barolo-chianti" : "explain-anthocyanins"))?.answer
     : undefined;
   const isGenerating = status === "submitted" || status === "streaming";
@@ -128,7 +129,10 @@ export function AtlasExperience({ regions, claims, sources, challenges }: AtlasE
   function navigateMapIndex(value: string) {
     const [kind, id] = value.split(":");
     if (kind === "study") {
-      setSelectedId(id as RegionId);
+      const nextRegionId = id as RegionId;
+      const firstExpression = wineExpressions.find((expression) => expression.regionId === nextRegionId);
+      setSelectedId(nextRegionId);
+      if (firstExpression) setExpressionId(firstExpression.id);
       setFocusedContextId(null);
       setActiveMapTooltipId(null);
       setChallengeAnswer(null);
@@ -136,6 +140,15 @@ export function AtlasExperience({ regions, claims, sources, challenges }: AtlasE
     }
     setFocusedContextId(id as MapContextPoint["id"]);
     setActiveMapTooltipId(null);
+  }
+
+  function selectRegion(regionId: RegionId) {
+    const firstExpression = wineExpressions.find((expression) => expression.regionId === regionId);
+    setSelectedId(regionId);
+    if (firstExpression) setExpressionId(firstExpression.id);
+    setFocusedContextId(null);
+    setActiveMapTooltipId(null);
+    setChallengeAnswer(null);
   }
 
   return (
@@ -184,30 +197,17 @@ export function AtlasExperience({ regions, claims, sources, challenges }: AtlasE
         </div>
       </header>
 
-      <div className="mx-auto grid max-w-[1500px] gap-4 px-5 pb-10 md:px-8 xl:grid-cols-[176px_minmax(0,1fr)_390px]">
-        <nav aria-label="Atlas layers" className="flex gap-2 overflow-x-auto xl:flex-col xl:overflow-visible">
-          {layers.map((layer) => {
-            const Icon = layer.icon;
-            const selectedLayer = activeLayer === layer.id;
-            return (
-              <button key={layer.id} onClick={() => setActiveLayer(layer.id)} className={`group flex shrink-0 items-center gap-3 rounded-xl border px-3 py-3 text-left transition ${selectedLayer ? "border-[color:var(--nav-active-border)] bg-[color:var(--nav-active)] shadow-[inset_3px_0_0_var(--brand-primary)]" : "border-transparent text-[color:var(--muted)] hover:bg-white/[0.035]"}`}>
-                <span className="grid h-8 w-8 place-items-center rounded-lg" style={{ backgroundColor: `${layer.colour}20`, color: layer.colour }}><Icon size={16} /></span>
-                <span><span className="block text-sm font-medium text-[color:var(--foreground)]">{layer.label}</span><span className="hidden text-[10px] uppercase tracking-wider text-[color:var(--muted)] xl:block">Explore signals</span></span>
-              </button>
-            );
-          })}
-        </nav>
-
+      <div className="mx-auto grid max-w-[1500px] gap-4 px-5 pb-10 md:px-8 xl:grid-cols-[minmax(0,1fr)_420px]">
         <section className="relative min-h-[580px] overflow-hidden rounded-2xl border border-[color:var(--line-strong)] bg-[image:var(--map-background)] p-5 shadow-[0_24px_80px_-45px_var(--brand-primary)] md:p-8">
           <div className="pointer-events-none absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(242,234,219,.06)_1px,transparent_1px),linear-gradient(90deg,rgba(242,234,219,.06)_1px,transparent_1px)] [background-size:42px_42px]" />
           <div className="relative flex items-start justify-between gap-4">
-            <div><p className="font-mono text-[10px] uppercase tracking-[0.24em]" style={{ color: active.colour }}>{active.label} layer</p><p className="mt-1 max-w-md text-sm text-[color:var(--muted)]">Select a region to trace the evidence from place to the glass.</p></div>
+            <div><p className="font-mono text-[10px] uppercase tracking-[0.24em]" style={{ color: active.colour }}>Geographic index</p><p className="mt-1 max-w-md text-sm text-[color:var(--muted)]">Select a place, then examine one wine expression at a time.</p></div>
             <button onClick={() => setComparisonOpen((open) => !open)} className="flex items-center gap-2 rounded-full border border-[color:var(--line)] bg-black/10 px-3 py-2 text-xs transition hover:bg-white/5"><Scale size={14} className="text-[color:var(--oxidised-gold)]" /> Barolo / Chianti</button>
           </div>
 
           <div className="relative mx-auto mt-1 h-[450px] max-w-3xl">
-            <CountryMap country="FR" className="left-[7%] top-[6%] w-[44%] aspect-square" maskClassName="bg-[color:var(--limestone)] opacity-20 [mask:url('/maps/france.svg')_center/100%_100%_no-repeat]" labelClassName="left-[25%] top-[17%] text-[color:var(--limestone)]/70" regions={regions} selectedId={selected.id} activeColour={active.colour} visibleTooltipId={activeMapTooltipId ?? (focusedContextId ? `context:${focusedContextId}` : null)} onTooltipChange={setActiveMapTooltipId} focusedContextId={focusedContextId} onContextFocus={setFocusedContextId} onSelect={(regionId) => { setSelectedId(regionId); setFocusedContextId(null); setActiveMapTooltipId(null); setChallengeAnswer(null); }} />
-            <CountryMap country="IT" className="right-[7%] top-[1%] h-[94%] aspect-[500/620]" maskClassName="bg-[color:var(--ponca)] opacity-25 [mask:url('/maps/italy.svg')_center/100%_100%_no-repeat]" labelClassName="right-[8%] top-[16%] text-[color:var(--ponca)]/70" regions={regions} selectedId={selected.id} activeColour={active.colour} visibleTooltipId={activeMapTooltipId ?? (focusedContextId ? `context:${focusedContextId}` : null)} onTooltipChange={setActiveMapTooltipId} focusedContextId={focusedContextId} onContextFocus={setFocusedContextId} onSelect={(regionId) => { setSelectedId(regionId); setFocusedContextId(null); setActiveMapTooltipId(null); setChallengeAnswer(null); }} />
+            <CountryMap country="FR" className="left-[7%] top-[6%] w-[44%] aspect-square" maskClassName="bg-[color:var(--limestone)] opacity-20 [mask:url('/maps/france.svg')_center/100%_100%_no-repeat]" labelClassName="left-[25%] top-[17%] text-[color:var(--limestone)]/70" regions={regions} selectedId={selected.id} activeColour={active.colour} visibleTooltipId={activeMapTooltipId ?? (focusedContextId ? `context:${focusedContextId}` : null)} onTooltipChange={setActiveMapTooltipId} focusedContextId={focusedContextId} onContextFocus={setFocusedContextId} onSelect={selectRegion} />
+            <CountryMap country="IT" className="right-[7%] top-[1%] h-[94%] aspect-[500/620]" maskClassName="bg-[color:var(--ponca)] opacity-25 [mask:url('/maps/italy.svg')_center/100%_100%_no-repeat]" labelClassName="right-[8%] top-[16%] text-[color:var(--ponca)]/70" regions={regions} selectedId={selected.id} activeColour={active.colour} visibleTooltipId={activeMapTooltipId ?? (focusedContextId ? `context:${focusedContextId}` : null)} onTooltipChange={setActiveMapTooltipId} focusedContextId={focusedContextId} onContextFocus={setFocusedContextId} onSelect={selectRegion} />
           </div>
           <div className="relative mt-auto flex flex-col gap-3 border-t border-[color:var(--line)] pt-3 sm:flex-row sm:items-center sm:justify-between">
             <label className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-[.14em] text-[color:var(--muted)]">
@@ -222,17 +222,15 @@ export function AtlasExperience({ regions, claims, sources, challenges }: AtlasE
         </section>
 
         <aside className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--panel)] p-5 md:p-6 xl:row-span-2">
-          <p className="font-mono text-[10px] uppercase tracking-[0.24em]" style={{ color: active.colour }}>{selected.eyebrow}</p>
-          <div className="mt-2 flex items-start justify-between gap-3"><div><h2 className="font-serif text-3xl tracking-tight">{selected.name}</h2><p className="mt-1 text-sm text-[color:var(--muted)]">{selected.location} · {countryLabel[selected.country]}</p></div><span className="rounded-full border border-[color:var(--line)] px-2 py-1 font-mono text-[9px] tracking-wider text-[color:var(--muted)]">{selected.entityType.replace("_", " ")}</span></div>
-          <p className="mt-5 text-sm leading-6 text-[color:var(--muted)]">{selected.summary}</p>
+          <div className="flex items-start justify-between gap-3"><div><h2 className="font-serif text-3xl tracking-tight">{selected.name}</h2><p className="mt-1 text-sm text-[color:var(--muted)]">{selected.location} · {countryLabel[selected.country]}</p></div><span className="rounded-full border border-[color:var(--line)] px-2 py-1 font-mono text-[9px] tracking-wider text-[color:var(--muted)]">{selected.entityType.replace("_", " ")}</span></div>
 
-          <div className="mt-6 border-y border-[color:var(--line)] py-4"><p className="font-mono text-[10px] uppercase tracking-[.2em] text-[color:var(--muted)]">{active.label} signal</p><p className="mt-2 text-sm leading-6">{selected.layerHighlights[activeLayer]}</p>{selected.id === "barolo" && activeLayer === "geology" && <BaroloSiteModel />}{selected.id === "collio" && activeLayer === "geology" && <MineralDecoder />}{selected.id === "barolo" && (activeLayer === "chemistry" || activeLayer === "phenolics") && <MolecularFingerprint key={activeLayer} layer={activeLayer} claims={claims} sources={sources} />}</div>
-          <div className="mt-5"><p className="font-mono text-[10px] uppercase tracking-[.2em] text-[color:var(--muted)]">Primary grapes</p><div className="mt-2 flex flex-wrap gap-2">{selected.grapes.map((grape) => <span key={grape} className="rounded-full bg-white/[.06] px-2.5 py-1 text-xs">{grape}</span>)}</div></div>
-
-          <Evidence claims={layerClaims.slice(0, 2)} sources={selectedSources} />
+          <ExpressionSelector region={selected} expressions={availableExpressions} selected={selectedExpression} onSelect={setExpressionId} />
+          <ProfileTabs activeTab={activeTab} onSelect={setActiveTab} />
+          <ProfilePanel region={selected} activeTab={activeTab} expression={selectedExpression} claims={claims} sources={sources} />
+          {tabClaims.length > 0 ? <Evidence claims={tabClaims.slice(0, 2)} sources={selectedSources} /> : <EvidenceGap tab={activeTab} expression={selectedExpression} />}
         </aside>
 
-        <section className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--panel)] p-5 md:p-6 xl:col-span-2">
+        <section className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--panel)] p-5 md:p-6">
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><p className="font-mono text-[10px] uppercase tracking-[.22em] text-[color:var(--oxidised-gold)]">Guided synthesis</p><h2 className="mt-1 font-serif text-2xl">Ask a better wine question.</h2></div><div className="flex rounded-lg border border-[color:var(--line)] p-1"><ModeButton active={mode === "sol"} onClick={() => setMode("sol")} label="Deep synthesis · Sol" /><ModeButton active={mode === "terra"} onClick={() => setMode("terra")} label="Quick tutor · Terra" /></div></div>
           <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_auto]"><div className="rounded-xl border border-dashed border-[color:var(--line)] bg-black/10 p-4"><p className="text-sm leading-6 text-[color:var(--muted)]">{synthesisPrompt}</p><p className="mt-3 font-mono text-[10px] uppercase tracking-wider text-[color:var(--muted)]">Grounded in selected corpus · citations shown in result</p></div><button disabled={isGenerating} onClick={() => sendMessage({ text: synthesisPrompt })} className="flex items-center justify-center gap-2 rounded-xl bg-[color:var(--foreground)] px-5 py-3 text-sm font-semibold text-[color:var(--background)] transition hover:bg-[color:var(--limestone)] disabled:cursor-wait disabled:opacity-60"><Sparkles size={15} className={isGenerating ? "animate-pulse" : ""} /> {isGenerating ? "Tracing evidence…" : "Synthesize"}</button></div>
           {(latestAnswer || fallbackAnswer) && <div className="mt-5 rounded-xl border border-[color:var(--line)] bg-black/15 p-4"><div className="mb-3 flex items-center justify-between gap-3"><p className="font-mono text-[10px] uppercase tracking-[.18em] text-[color:var(--sage)]">{fallbackAnswer ? "Curated fallback" : mode === "sol" ? "Sol synthesis" : "Terra tutor"}</p>{fallbackAnswer && <span className="text-[10px] text-[color:var(--muted)]">Live model unavailable</span>}</div><MessageResponse className="text-sm leading-6 text-[color:var(--foreground)]">{latestAnswer ?? fallbackAnswer ?? ""}</MessageResponse></div>}
@@ -322,6 +320,67 @@ function ContextDots({ focusedId, visibleTooltipId, onTooltipChange, onFocus }: 
   );
 }
 
+function ExpressionSelector({ region, expressions, selected, onSelect }: { region: Region; expressions: readonly WineExpression[]; selected?: WineExpression; onSelect: (expressionId: string) => void }) {
+  if (!selected) return null;
+
+  return (
+    <section className="mt-5 rounded-xl border border-[color:var(--line)] bg-black/10 p-3" aria-label="Wine expression">
+      <div className="flex items-center justify-between gap-3">
+        <p className="font-mono text-[9px] uppercase tracking-[.18em] text-[color:var(--oxidised-gold)]">Wine expression</p>
+        {expressions.length > 1 && <select aria-label={`Choose a ${region.name} wine expression`} value={selected.id} onChange={(event) => onSelect(event.target.value)} className="min-w-0 max-w-[220px] rounded-md border border-[color:var(--line)] bg-[color:var(--panel)] px-2 py-1 text-xs text-[color:var(--foreground)] outline-none focus:border-[color:var(--oxidised-gold)]">{expressions.map((expression) => <option key={expression.id} value={expression.id}>{expression.label}</option>)}</select>}
+      </div>
+      <div className="mt-3 grid grid-cols-3 gap-2">
+        <ExpressionField label="Place" value={region.name} />
+        <ExpressionField label="Grape" value={selected.grape} database />
+        <ExpressionField label="Vinification" value={selected.vinification} />
+      </div>
+    </section>
+  );
+}
+
+function ExpressionField({ label, value, database = false }: { label: string; value: string; database?: boolean }) {
+  return <div className="min-w-0 border-l border-[color:var(--line)] pl-2 first:border-l-0 first:pl-0"><p className="font-mono text-[8px] uppercase tracking-[.12em] text-[color:var(--muted)]">{label}</p><p className="mt-1 truncate text-[10px] font-medium text-[color:var(--foreground)]" title={value}>{value}</p>{database && <p className="mt-0.5 font-mono text-[7px] uppercase tracking-[.08em] text-[color:var(--sage)]">Grape database</p>}</div>;
+}
+
+function ProfileTabs({ activeTab, onSelect }: { activeTab: ProfileTabId; onSelect: (tab: ProfileTabId) => void }) {
+  return (
+    <nav aria-label="Appellation evidence" className="mt-5 grid grid-cols-4 gap-1 border-b border-[color:var(--line)]" role="tablist">
+      {profileTabs.map((tab) => {
+        const Icon = tab.icon;
+        const isActive = activeTab === tab.id;
+        return <button key={tab.id} role="tab" aria-selected={isActive} onClick={() => onSelect(tab.id)} className={`flex min-w-0 flex-col items-center gap-1 border-b-2 px-1 py-2 text-[10px] transition ${isActive ? "border-[color:var(--brand-primary)] text-[color:var(--foreground)]" : "border-transparent text-[color:var(--muted)] hover:text-[color:var(--foreground)]"}`}><Icon size={14} style={{ color: isActive ? tab.colour : undefined }} /><span className="truncate">{tab.label}</span></button>;
+      })}
+    </nav>
+  );
+}
+
+function ProfilePanel({ region, activeTab, expression, claims, sources }: { region: Region; activeTab: ProfileTabId; expression?: WineExpression; claims: Claim[]; sources: Source[] }) {
+  const chemistryText = region.id === "jura" && expression?.vinification === "Ouillé"
+    ? "This expression excludes veil-derived sotolon as a defining shortcut; oxygen management, fermentation and élevage need their own evidence trail."
+    : region.id === "collio" && expression?.id === "collio-ribolla-skin"
+      ? region.layerHighlights.phenolics
+      : region.layerHighlights.chemistry;
+
+  return (
+    <section role="tabpanel" className="border-b border-[color:var(--line)] py-5">
+      {(activeTab === "chemistry" || activeTab === "structure") && expression && <p className="font-mono text-[8px] uppercase tracking-[.14em] text-[color:var(--muted)]">Scoped to {expression.label}</p>}
+      {activeTab === "place" && <><SignalText>{region.layerHighlights.geology}</SignalText>{region.id === "barolo" && <BaroloSiteModel />}{region.id === "collio" && <MineralDecoder />}</>}
+      {activeTab === "chemistry" && <><SignalText>{chemistryText}</SignalText>{region.id === "barolo" && <MolecularFingerprint layer="chemistry" claims={claims} sources={sources} />}</>}
+      {activeTab === "structure" && <><SignalText>{region.layerHighlights.phenolics}</SignalText><p className="mt-2 text-[11px] leading-5 text-[color:var(--muted)]">{region.layerHighlights.palate}</p>{region.id === "barolo" && <MolecularFingerprint layer="phenolics" claims={claims} sources={sources} />}<StructureProfile region={region} /></>}
+      {activeTab === "rules" && <SignalText>{region.layerHighlights.rules}</SignalText>}
+    </section>
+  );
+}
+
+function SignalText({ children }: { children: string }) {
+  return <p className="mt-2 text-sm leading-6 text-[color:var(--foreground)]">{children}</p>;
+}
+
+function StructureProfile({ region }: { region: Region }) {
+  const metrics = region.archetype.metrics.filter((metric) => ["colour", "acidity", "tannin", "body"].includes(metric.id));
+  return <div className="mt-4"><div className="flex items-center justify-between gap-2"><p className="font-mono text-[9px] uppercase tracking-[.16em] text-[color:var(--oxidised-gold)]">Organoleptic structure</p><span className="text-[8px] text-[color:var(--muted)]">Editorial range · 1—5</span></div><div className="mt-3 space-y-3">{metrics.map((metric) => <div key={metric.id}><div className="flex items-center justify-between gap-2 text-[10px]"><span>{metric.label}</span><span className="text-[color:var(--muted)]">{metric.min}—{metric.max}</span></div><div className="relative mt-1 h-1.5 rounded-full bg-white/[.07]"><span className="absolute top-0 h-1.5 rounded-full bg-[color:var(--garnet)]" style={{ left: `${(metric.min - 1) * 25}%`, width: `${Math.max((metric.max - metric.min) * 25, 6)}%` }} /></div><p className="mt-1 text-[9px] leading-4 text-[color:var(--muted)]">{metric.descriptor}</p></div>)}</div></div>;
+}
+
 function BaroloSiteModel() {
   const factors = ["Formation", "Soil properties", "Water + root environment", "Slope + microclimate", "Vine response + farming", "Bounded hypothesis"];
   return <div className="mt-4"><p className="font-mono text-[9px] uppercase tracking-[.18em] text-[color:var(--oxidised-gold)]">Site before style</p><ol className="mt-2 grid grid-cols-2 gap-1.5">{factors.map((factor, index) => <li key={factor} className={`rounded-md border border-[color:var(--line)] bg-black/10 px-2 py-1.5 text-[10px] leading-4 ${index === factors.length - 1 ? "col-span-2 text-[color:var(--sage)]" : "text-[color:var(--muted)]"}`}><span className="mr-1.5 font-mono text-[color:var(--oxidised-gold)]">{index + 1}</span>{factor}</li>)}</ol></div>;
@@ -349,6 +408,10 @@ function MolecularFingerprint({ layer, claims, sources }: { layer: MolecularLaye
 
 function Evidence({ claims, sources }: { claims: Claim[]; sources: Source[] }) {
   return <div className="mt-6"><div className="flex items-center justify-between"><p className="font-mono text-[10px] uppercase tracking-[.2em] text-[color:var(--muted)]">Evidence trail</p><BookOpen size={14} className="text-[color:var(--oxidised-gold)]" /></div><div className="mt-3 space-y-2">{claims.map((claim) => <div key={claim.id} className="rounded-lg border border-[color:var(--line)] bg-black/10 p-3"><div className="flex items-start justify-between gap-2"><p className="text-xs font-medium leading-5">{claim.title}</p><span className={`shrink-0 rounded-full border px-1.5 py-0.5 font-mono text-[8px] uppercase ${confidenceTone(claim.confidence)}`}>{claim.confidence}</span></div><p className="mt-1 text-[11px] leading-4 text-[color:var(--muted)]">{claim.learnerNote}</p></div>)}</div><div className="mt-3 flex flex-wrap gap-2">{sources.slice(0, 2).map((source) => <a key={source.id} href={source.url} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-[10px] text-[color:var(--limestone)] hover:underline">{source.publisher}<ArrowUpRight size={10} /></a>)}</div></div>;
+}
+
+function EvidenceGap({ tab, expression }: { tab: ProfileTabId; expression?: WineExpression }) {
+  return <div className="mt-6 rounded-lg border border-dashed border-[color:var(--line)] p-3"><p className="font-mono text-[9px] uppercase tracking-[.16em] text-[color:var(--muted)]">Evidence gap</p><p className="mt-2 text-[11px] leading-5 text-[color:var(--muted)]">No verified {tab} claims are attached to {expression?.label ?? "this expression"} in the demo corpus yet. Place evidence is not substituted.</p></div>;
 }
 
 function ComparisonSheet({ barolo, chianti, onClose }: { barolo: Region; chianti: Region; onClose: () => void }) {
