@@ -56,6 +56,9 @@
   --line-strong: rgba(242, 234, 219, 0.22);
   --wash-one: rgba(220, 109, 85, 0.24);
   --wash-two: rgba(224, 174, 72, 0.14);
+  --terrain-basin: #6f93a0;
+  --terrain-massif: #b66f50;
+  --terrain-ridge: #dfb857;
   --map-background: radial-gradient(ellipse at 52% 35%, #36202a 0%, #1b171a 46%, #11110f 78%);
 }
 
@@ -71,6 +74,9 @@
   --sage: #98aa6f;
   --background: #120f11;
   --foreground: #fff2e3;
+  --terrain-basin: #729eaa;
+  --terrain-massif: #d87657;
+  --terrain-ridge: #e0ae48;
 }
 
 [data-theme="cellar"] {
@@ -85,6 +91,9 @@
   --sage: #8c9a70;
   --background: #100e0d;
   --foreground: #f6e6cf;
+  --terrain-basin: #637f88;
+  --terrain-massif: #ad5b4e;
+  --terrain-ridge: #d09b55;
   --brand-primary: #ad4058;
   --brand-secondary: #c57b48;
   --brand-tertiary: #8c9a70;
@@ -109,6 +118,9 @@
   --sage: #68aaa0;
   --background: #0b1214;
   --foreground: #eaf3ed;
+  --terrain-basin: #4d8d99;
+  --terrain-massif: #c8674e;
+  --terrain-ridge: #d9b85f;
   --brand-primary: #3ea8a0;
   --brand-secondary: #e27d58;
   --brand-tertiary: #d9b85f;

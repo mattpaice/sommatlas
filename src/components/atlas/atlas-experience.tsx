@@ -22,6 +22,7 @@ import { MessageResponse } from "@/components/ai-elements/message";
 import { chiantiClassicoComplementaryRedGrapes } from "@/data/appellation-rules";
 import { demoFallbacks } from "@/data/demo-fallback";
 import { mapContextPoints, type MapContextPoint } from "@/data/map-context";
+import { mapTerrainFeatures, terrainLegend, type TerrainKind } from "@/data/map-terrain";
 import { baroloMolecularSignals, chiantiMolecularSignals, type MolecularLayer, type MolecularSignal } from "@/data/molecular-signals";
 import { referenceProducers } from "@/data/reference-producers";
 import { wineExpressions, type WineExpression } from "@/data/wine-expressions";
@@ -244,7 +245,7 @@ export function AtlasExperience({ regions, claims, sources, challenges }: AtlasE
                 <optgroup label="Context appellations">{mapContextPoints.map((point) => <option key={point.id} value={`context:${point.id}`}>{point.label}</option>)}</optgroup>
               </select>
             </label>
-            {!mapCollapsed && <span className="text-[10px] text-[color:var(--muted)]">Hover or focus a dot to identify it · representative points</span>}
+            {!mapCollapsed && <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-[9px] text-[color:var(--muted)]"><span>Broad geological context</span>{terrainLegend.map((item) => <span key={item.kind} className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-sm" style={{ background: terrainColour(item.kind) }} />{item.label}</span>)}</div>}
           </div>
         </section>
 
@@ -293,12 +294,51 @@ function CountryMap({ country, className, maskClassName, labelClassName, regions
   return (
     <div className={`absolute overflow-visible ${className}`}>
       <div aria-hidden className={`absolute inset-0 ${maskClassName}`} />
+      <TerrainOverlay country={country} showLabels={showContext} />
       <div className={`pointer-events-none absolute font-mono text-[10px] tracking-[.24em] ${labelClassName}`}>{country === "FR" ? "FRANCE" : "ITALY"}</div>
       {country === "FR" && showContext && <ContextDots focusedId={focusedContextId} visibleTooltipId={visibleTooltipId} onTooltipChange={onTooltipChange} onFocus={onContextFocus} />}
       {countryRegions.map((region) => (
         <Hotspot key={region.id} region={region} active={selectedId === region.id} colour={activeColour} tooltipVisible={visibleTooltipId === `study:${region.id}`} onTooltipChange={onTooltipChange} onSelect={() => onSelect(region.id)} />
       ))}
     </div>
+  );
+}
+
+function terrainColour(kind: TerrainKind) {
+  if (kind === "sedimentary-basin") return "var(--terrain-basin)";
+  if (kind === "ancient-massif") return "var(--terrain-massif)";
+  return "var(--terrain-ridge)";
+}
+
+function TerrainOverlay({ country, showLabels }: { country: MapCountry; showLabels: boolean }) {
+  const features = mapTerrainFeatures.filter((feature) => feature.country === country);
+  const viewBox = country === "FR" ? "0 0 500 500" : "0 0 500 620";
+
+  return (
+    <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox={viewBox} role="img" aria-label={`Broad geological context for ${country === "FR" ? "France" : "Italy"}`} style={{ maskImage: `url('/maps/${country === "FR" ? "france" : "italy"}.svg')`, maskPosition: "center", maskRepeat: "no-repeat", maskSize: "100% 100%" }}>
+      {features.map((feature) => {
+        const points = feature.points.map(([longitude, latitude]) => {
+          const point = projectCountryPoint(country, { longitude, latitude });
+          return `${point.x},${point.y}`;
+        }).join(" ");
+        const label = projectCountryPoint(country, { longitude: feature.labelAnchor[0], latitude: feature.labelAnchor[1] });
+        const colour = terrainColour(feature.kind);
+
+        return (
+          <g key={feature.id}>
+            {feature.geometry === "area" ? (
+              <polygon points={points} fill={colour} fillOpacity="0.22" stroke={colour} strokeOpacity="0.34" strokeWidth="1.5" />
+            ) : (
+              <>
+                <polyline points={points} fill="none" stroke={colour} strokeLinecap="round" strokeLinejoin="round" strokeOpacity="0.16" strokeWidth="18" />
+                <polyline points={points} fill="none" stroke={colour} strokeDasharray="2 5" strokeLinecap="round" strokeLinejoin="round" strokeOpacity="0.78" strokeWidth="2.2" />
+              </>
+            )}
+            {showLabels && <text x={label.x} y={label.y} fill="var(--foreground)" fontSize="9" fontWeight="650" letterSpacing="1.1" opacity="0.7" textAnchor="middle" style={{ paintOrder: "stroke", stroke: "var(--background)", strokeWidth: 3 }}>{feature.label.toUpperCase()}</text>}
+          </g>
+        );
+      })}
+    </svg>
   );
 }
 
