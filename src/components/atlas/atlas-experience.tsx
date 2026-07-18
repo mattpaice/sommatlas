@@ -22,8 +22,8 @@ import { MessageResponse } from "@/components/ai-elements/message";
 import { chiantiClassicoComplementaryRedGrapes } from "@/data/appellation-rules";
 import { demoFallbacks } from "@/data/demo-fallback";
 import { mapContextPoints, type MapContextPoint } from "@/data/map-context";
-import { mapTerrainFeatures, terrainLegend, type TerrainKind } from "@/data/map-terrain";
-import { baroloMolecularSignals, chiantiMolecularSignals, type MolecularLayer, type MolecularSignal } from "@/data/molecular-signals";
+import { mapMountainRanges } from "@/data/map-terrain";
+import { baroloMolecularSignals, chiantiMolecularSignals, collioMolecularSignals, juraMolecularSignals, type MolecularLayer, type MolecularSignal } from "@/data/molecular-signals";
 import { referenceProducers } from "@/data/reference-producers";
 import { wineExpressions, type WineExpression } from "@/data/wine-expressions";
 import { projectCountryPoint, type MapCountry } from "@/lib/map-projection";
@@ -245,7 +245,7 @@ export function AtlasExperience({ regions, claims, sources, challenges }: AtlasE
                 <optgroup label="Context appellations">{mapContextPoints.map((point) => <option key={point.id} value={`context:${point.id}`}>{point.label}</option>)}</optgroup>
               </select>
             </label>
-            {!mapCollapsed && <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-[9px] text-[color:var(--muted)]"><span>Broad geological context</span>{terrainLegend.map((item) => <span key={item.kind} className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-sm" style={{ background: terrainColour(item.kind) }} />{item.label}</span>)}</div>}
+            {!mapCollapsed && <span className="text-[10px] text-[color:var(--muted)]">Hover or focus a dot to identify it · representative points</span>}
           </div>
         </section>
 
@@ -294,7 +294,7 @@ function CountryMap({ country, className, maskClassName, labelClassName, regions
   return (
     <div className={`absolute overflow-visible ${className}`}>
       <div aria-hidden className={`absolute inset-0 ${maskClassName}`} />
-      <TerrainOverlay country={country} showLabels={showContext} />
+      <MountainOverlay country={country} />
       <div className={`pointer-events-none absolute font-mono text-[10px] tracking-[.24em] ${labelClassName}`}>{country === "FR" ? "FRANCE" : "ITALY"}</div>
       {country === "FR" && showContext && <ContextDots focusedId={focusedContextId} visibleTooltipId={visibleTooltipId} onTooltipChange={onTooltipChange} onFocus={onContextFocus} />}
       {countryRegions.map((region) => (
@@ -304,37 +304,25 @@ function CountryMap({ country, className, maskClassName, labelClassName, regions
   );
 }
 
-function terrainColour(kind: TerrainKind) {
-  if (kind === "sedimentary-basin") return "var(--terrain-basin)";
-  if (kind === "ancient-massif") return "var(--terrain-massif)";
-  return "var(--terrain-ridge)";
-}
-
-function TerrainOverlay({ country, showLabels }: { country: MapCountry; showLabels: boolean }) {
-  const features = mapTerrainFeatures.filter((feature) => feature.country === country);
+function MountainOverlay({ country }: { country: MapCountry }) {
+  const ranges = mapMountainRanges.filter((range) => range.country === country);
   const viewBox = country === "FR" ? "0 0 500 500" : "0 0 500 620";
 
   return (
-    <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox={viewBox} role="img" aria-label={`Broad geological context for ${country === "FR" ? "France" : "Italy"}`} style={{ maskImage: `url('/maps/${country === "FR" ? "france" : "italy"}.svg')`, maskPosition: "center", maskRepeat: "no-repeat", maskSize: "100% 100%" }}>
-      {features.map((feature) => {
-        const points = feature.points.map(([longitude, latitude]) => {
-          const point = projectCountryPoint(country, { longitude, latitude });
-          return `${point.x},${point.y}`;
-        }).join(" ");
-        const label = projectCountryPoint(country, { longitude: feature.labelAnchor[0], latitude: feature.labelAnchor[1] });
-        const colour = terrainColour(feature.kind);
+    <svg aria-hidden className="pointer-events-none absolute inset-0 h-full w-full" viewBox={viewBox} style={{ maskImage: `url('/maps/${country === "FR" ? "france" : "italy"}.svg')`, maskPosition: "center", maskRepeat: "no-repeat", maskSize: "100% 100%" }}>
+      {ranges.map((range) => {
+        const projected = range.points.map(([longitude, latitude]) => projectCountryPoint(country, { longitude, latitude }));
+        const line = projected.map((point) => `${point.x},${point.y}`).join(" ");
 
         return (
-          <g key={feature.id}>
-            {feature.geometry === "area" ? (
-              <polygon points={points} fill={colour} fillOpacity="0.22" stroke={colour} strokeOpacity="0.34" strokeWidth="1.5" />
-            ) : (
-              <>
-                <polyline points={points} fill="none" stroke={colour} strokeLinecap="round" strokeLinejoin="round" strokeOpacity="0.16" strokeWidth="18" />
-                <polyline points={points} fill="none" stroke={colour} strokeDasharray="2 5" strokeLinecap="round" strokeLinejoin="round" strokeOpacity="0.78" strokeWidth="2.2" />
-              </>
-            )}
-            {showLabels && <text x={label.x} y={label.y} fill="var(--foreground)" fontSize="9" fontWeight="650" letterSpacing="1.1" opacity="0.7" textAnchor="middle" style={{ paintOrder: "stroke", stroke: "var(--background)", strokeWidth: 3 }}>{feature.label.toUpperCase()}</text>}
+          <g key={range.id}>
+            <polyline points={line} fill="none" stroke="var(--terrain-ridge)" strokeLinecap="round" strokeLinejoin="round" strokeOpacity="0.1" strokeWidth="7" />
+            {projected.map((point, index) => (
+              <g key={`${range.id}-${index}`} transform={`translate(${point.x} ${point.y}) scale(${range.scale})`}>
+                <path d="M-12 6 -3 -8 3 0 8 -5 16 6Z" fill="var(--terrain-ridge)" fillOpacity="0.2" stroke="var(--terrain-ridge)" strokeLinejoin="round" strokeOpacity="0.62" strokeWidth="1.5" />
+                <path d="M-6 -3 -3 -8 0 -3M5 -2 8 -5 11 -1" fill="none" stroke="var(--foreground)" strokeLinecap="round" strokeLinejoin="round" strokeOpacity="0.3" strokeWidth="1.2" />
+              </g>
+            ))}
           </g>
         );
       })}
@@ -429,7 +417,7 @@ function ProfilePanel({ region, activeTab, expression, claims, sources }: { regi
     <section role="tabpanel" className="border-b border-[color:var(--line)] py-5">
       {(activeTab === "chemistry" || activeTab === "structure") && expression && <p className="font-mono text-[8px] uppercase tracking-[.14em] text-[color:var(--muted)]">Scoped to {expression.label}</p>}
       {activeTab === "place" && <><PlaceBasics region={region} /><SignalText>{region.layerHighlights.geology}</SignalText>{region.id === "barolo" && <BaroloSiteModel />}{region.id === "collio" && <MineralDecoder />}</>}
-      {activeTab === "chemistry" && <><SignalText featured>{chemistryText}</SignalText>{region.id === "barolo" && <MolecularFingerprint key="barolo-chemistry" layer="chemistry" signals={baroloMolecularSignals} claims={claims} sources={sources} />}{region.id === "chianti-classico" && <MolecularFingerprint key="chianti-chemistry" layer="chemistry" signals={chiantiMolecularSignals} claims={claims} sources={sources} />}</>}
+      {activeTab === "chemistry" && <><SignalText featured>{chemistryText}</SignalText>{region.id === "barolo" && <MolecularFingerprint key="barolo-chemistry" layer="chemistry" signals={baroloMolecularSignals} claims={claims} sources={sources} />}{region.id === "chianti-classico" && <MolecularFingerprint key="chianti-chemistry" layer="chemistry" signals={chiantiMolecularSignals} claims={claims} sources={sources} />}{region.id === "jura" && <MolecularFingerprint key={expression?.id} layer="chemistry" signals={juraMolecularSignals} expressionId={expression?.id} claims={claims} sources={sources} />}{region.id === "collio" && <MolecularFingerprint key={expression?.id} layer="chemistry" signals={collioMolecularSignals} expressionId={expression?.id} claims={claims} sources={sources} />}</>}
       {activeTab === "structure" && <><SignalText>{region.layerHighlights.phenolics}</SignalText><p className="mt-2 text-[11px] leading-5 text-[color:var(--muted)]">{region.layerHighlights.palate}</p>{region.id === "barolo" && <MolecularFingerprint key="barolo-phenolics" layer="phenolics" signals={baroloMolecularSignals} claims={claims} sources={sources} />}<StructureProfile region={region} /></>}
       {activeTab === "rules" && <><SignalText>{region.layerHighlights.rules}</SignalText>{region.id === "chianti-classico" && <ChiantiClassicoRules />}</>}
       {activeTab === "producers" && <ReferenceProducers region={region} />}
@@ -511,8 +499,8 @@ function ReferenceProducers({ region }: { region: Region }) {
   );
 }
 
-function MolecularFingerprint({ layer, signals: signalLibrary, claims, sources }: { layer: MolecularLayer; signals: readonly MolecularSignal[]; claims: Claim[]; sources: Source[] }) {
-  const signals = signalLibrary.filter((signal) => signal.layer === layer);
+function MolecularFingerprint({ layer, signals: signalLibrary, expressionId, claims, sources }: { layer: MolecularLayer; signals: readonly MolecularSignal[]; expressionId?: string; claims: Claim[]; sources: Source[] }) {
+  const signals = signalLibrary.filter((signal) => signal.layer === layer && (!expressionId || !signal.expressionIds || signal.expressionIds.includes(expressionId)));
   const [selectedSignalId, setSelectedSignalId] = useState<string | undefined>(signals[0]?.id);
   const selectedSignal = signals.find((signal) => signal.id === selectedSignalId) ?? signals[0];
   const claim = claims.find((candidate) => candidate.id === selectedSignal?.claimId);
