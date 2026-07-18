@@ -50,7 +50,6 @@
   --brand-secondary: #e0ae48;
   --brand-tertiary: #98aa6f;
   --header-bg: #25161f;
-  --mark-bg: rgba(25, 12, 20, 0.72);
   --theme-control: rgba(220, 109, 85, 0.16);
   --nav-active: rgba(220, 109, 85, 0.1);
   --nav-active-border: rgba(220, 109, 85, 0.28);
@@ -90,7 +89,6 @@
   --brand-secondary: #c57b48;
   --brand-tertiary: #8c9a70;
   --header-bg: #201414;
-  --mark-bg: rgba(30, 15, 15, 0.76);
   --theme-control: rgba(173, 64, 88, 0.17);
   --nav-active: rgba(173, 64, 88, 0.11);
   --nav-active-border: rgba(197, 123, 72, 0.3);
@@ -115,7 +113,6 @@
   --brand-secondary: #e27d58;
   --brand-tertiary: #d9b85f;
   --header-bg: #0e2024;
-  --mark-bg: rgba(7, 24, 28, 0.78);
   --theme-control: rgba(62, 168, 160, 0.16);
   --nav-active: rgba(62, 168, 160, 0.1);
   --nav-active-border: rgba(62, 168, 160, 0.28);
@@ -179,6 +176,10 @@ html {
 body {
   min-height: 100vh;
   font-family: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
+}
+
+.font-wordmark {
+  font-family: var(--font-pinyon), "Snell Roundhand", "URW Chancery L", cursive;
 }
 
 .atlas-shell {

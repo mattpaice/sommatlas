@@ -160,14 +160,16 @@ export function AtlasExperience({ regions, claims, sources, challenges }: AtlasE
           <div className="absolute inset-0 opacity-[.11] [background-image:repeating-linear-gradient(118deg,transparent_0,transparent_42px,var(--foreground)_43px,transparent_44px)]" />
         </div>
         <div className="relative mx-auto flex max-w-[1500px] flex-col gap-5 px-5 py-5 md:px-8 lg:flex-row lg:items-center lg:justify-between lg:py-6">
-          <div className="flex items-center gap-4">
-            <AtlasMark />
-            <div>
-              <div className="flex items-baseline gap-3">
-                <p className="font-serif text-2xl tracking-[-0.04em] md:text-3xl">Somm<span className="text-[color:var(--brand-primary)]">Atlas</span></p>
-                <span className="hidden font-mono text-[9px] uppercase tracking-[.24em] text-[color:var(--brand-secondary)] sm:inline">Field study 01</span>
-              </div>
-              <h1 className="mt-0.5 text-sm tracking-wide text-[color:var(--muted)] md:text-base">Wine, from bedrock to glass.</h1>
+          <div className="wordmark-lockup min-w-[250px] py-1">
+            <div className="flex items-center gap-3">
+              <span className="font-mono text-[8px] uppercase tracking-[.3em] text-[color:var(--brand-secondary)]">The interactive wine atlas</span>
+              <span className="h-px min-w-6 flex-1 bg-[color:var(--line-strong)]" aria-hidden />
+            </div>
+            <p className="font-wordmark -mb-1 mt-[-2px] text-[3.45rem] leading-none text-[color:var(--foreground)] drop-shadow-[0_8px_18px_var(--brand-primary)] md:text-[4.15rem]">SommAtlas</p>
+            <div className="flex items-center gap-3">
+              <span className="h-px flex-1 bg-[linear-gradient(90deg,var(--brand-primary),var(--brand-secondary),transparent)]" aria-hidden />
+              <h1 className="text-[10px] uppercase tracking-[.19em] text-[color:var(--muted)]">Bedrock to glass</h1>
+              <span className="text-[color:var(--brand-secondary)]" aria-hidden>◆</span>
             </div>
           </div>
 
@@ -240,23 +242,6 @@ export function AtlasExperience({ regions, claims, sources, challenges }: AtlasE
       {comparisonOpen && <ComparisonSheet barolo={barolo} chianti={chianti} onClose={() => setComparisonOpen(false)} />}
       <ChallengeCard challenge={activeChallenge} answer={challengeAnswer} onAnswer={setChallengeAnswer} claims={claims} sources={sources} />
     </main>
-  );
-}
-
-function AtlasMark() {
-  return (
-    <div className="relative grid h-14 w-14 shrink-0 place-items-center rounded-2xl border border-[color:var(--line-strong)] bg-[color:var(--mark-bg)] shadow-[0_12px_35px_-18px_var(--brand-primary)] md:h-16 md:w-16" aria-hidden>
-      <svg viewBox="0 0 64 64" className="h-11 w-11 md:h-12 md:w-12" fill="none">
-        <circle cx="32" cy="32" r="24" stroke="var(--brand-secondary)" strokeWidth="1" strokeDasharray="2 4" opacity=".72" />
-        <path d="M13 37c8-12 14-17 24-22M16 45c8-11 18-18 34-22M24 51c7-9 15-14 27-18" stroke="var(--brand-tertiary)" strokeWidth="1.25" strokeLinecap="round" opacity=".75" />
-        <path d="M34 18c8 4 11 10 9 17-2 8-9 13-16 12-7-1-11-7-10-14 1-6 7-12 17-15Z" fill="var(--brand-primary)" fillOpacity=".18" stroke="var(--brand-primary)" strokeWidth="1.5" />
-        <circle cx="27" cy="30" r="3" fill="var(--brand-primary)" />
-        <circle cx="34" cy="29" r="3" fill="var(--brand-primary)" />
-        <circle cx="30.5" cy="36" r="3" fill="var(--brand-primary)" />
-        <path d="M32 25c0-4 2-7 6-9" stroke="var(--brand-secondary)" strokeWidth="1.5" strokeLinecap="round" />
-      </svg>
-      <span className="absolute bottom-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-[color:var(--brand-secondary)]" />
-    </div>
   );
 }
 
