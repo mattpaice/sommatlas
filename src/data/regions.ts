@@ -13,7 +13,7 @@ export const regions = [
     map: { longitude: 7.94, latitude: 44.61, anchorLabel: "Barolo" },
     layerHighlights: {
       geology: "Formation is only the first layer: soil evolution, slope, elevation, exposure and microclimate complicate every MGA shortcut.",
-      chemistry: "Track glycosidic C13-norisoprenoid precursors (3-hydroxy-beta-damascone, 3-oxo-alpha-ionol, blumenol C, vomifoliol), finished-wine linalool and geraniol, then ageing aldehydes such as acetaldehyde and methional—without equating any one molecule to a tasting note.",
+      chemistry: "Nebbiolo’s floral aromas have useful chemical anchors: geraniol is commonly associated with rose-like notes, while linalool is often linked with floral aromas, citrus and a touch of spice. Other aroma compounds begin as bound precursors in the grape and are released or transformed during fermentation and ageing. Together they influence the wine’s aroma; no single molecule explains the whole bouquet.",
       phenolics: "Peonidin-3-O-glucoside and malvidin-3-O-glucoside lead one measured low-pigment profile; proanthocyanidins are chains of catechin, epicatechin, epicatechin gallate and skin epigallocatechin units. Low colour does not mean low tannin.",
       palate: "Aromatic lift, high acidity and drying tannin are the teaching archetype.",
       rules: "100% Nebbiolo; 38 months ageing with at least 18 in wood.",
