@@ -8,6 +8,7 @@ export interface MolecularSignal {
   teachingRole: string;
   claimId: string;
   layer: MolecularLayer;
+  expressionIds?: readonly string[];
 }
 
 export const baroloMolecularSignals = [
