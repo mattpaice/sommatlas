@@ -12,23 +12,23 @@ Somm Atlas connects the maps wine learners usually encounter separately:
 - phenolic architecture, including tannins and anthocyanin profiles; and
 - palate architecture: acidity, alcohol, body, texture, and finish.
 
-## Hackathon prototype
+## Live prototype
 
-The first version focuses on eight regions in France and Italy:
+[Open Somm Atlas](https://sommatlas.vercel.app)
+
+The hackathon version focuses on four high-contrast studies in France and Italy:
 
 - Barolo
 - Chianti Classico
-- Collio
-- Etna
-- Côte-Rôtie
 - Jura
-- Sancerre
-- Saumur-Champigny
+- Collio
 
-The core experience is a map with switchable layers and evidence-backed region
-profiles. A comparison mode will help learners understand how similar wines can
-be distinguished in blind tasting. A “Could this be…?” mode will turn
-appellation rules into short legal classification challenges.
+The core experience combines a switchable evidence atlas, a Barolo/Chianti
+Classico comparison sheet, cited region profiles, and appellation-law
+challenges. A guided synthesis route uses GPT-5.6 Sol for cross-domain analysis
+and GPT-5.6 Terra for fast teaching explanations. Both are bounded by tools
+that expose only the local verified corpus; deterministic answers preserve the
+demo if model access is unavailable.
 
 ## Evidence principles
 
@@ -44,5 +44,14 @@ appellation rules into short legal classification challenges.
 
 ## Status
 
-Hackathon build in progress.
+Five-hour hackathon prototype, deployed on Vercel.
 
+## Run locally
+
+```bash
+npm install
+npm run dev
+```
+
+The static atlas and curated synthesis work without a database. Live Sol/Terra
+calls use Vercel AI Gateway through the linked project's OIDC credentials.
