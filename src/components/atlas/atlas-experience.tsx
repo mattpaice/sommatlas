@@ -342,9 +342,9 @@ function ExpressionSelector({ region, expressions, selected, onSelect }: { regio
         {expressions.length > 1 && <select aria-label={`Choose a ${region.name} wine expression`} value={selected.id} onChange={(event) => onSelect(event.target.value)} className="min-w-0 max-w-[220px] rounded-md border border-[color:var(--line)] bg-[color:var(--panel)] px-2 py-1 text-xs text-[color:var(--foreground)] outline-none focus:border-[color:var(--oxidised-gold)]">{expressions.map((expression) => <option key={expression.id} value={expression.id}>{expression.label}</option>)}</select>}
       </div>
       <div className="mt-3 grid grid-cols-3 gap-2">
-        <ExpressionField label="Place" value={region.name} />
         <ExpressionField label="Grape" value={selected.grape} database />
         <ExpressionField label="Vinification" value={selected.vinification} />
+        <ExpressionField label="Place" value={region.name} />
       </div>
     </section>
   );
@@ -388,13 +388,23 @@ function ProfilePanel({ region, activeTab, expression, claims, sources }: { regi
   return (
     <section role="tabpanel" className="border-b border-[color:var(--line)] py-5">
       {(activeTab === "chemistry" || activeTab === "structure") && expression && <p className="font-mono text-[8px] uppercase tracking-[.14em] text-[color:var(--muted)]">Scoped to {expression.label}</p>}
-      {activeTab === "place" && <><SignalText featured>{region.layerHighlights.geology}</SignalText>{region.id === "barolo" && <BaroloSiteModel />}{region.id === "collio" && <MineralDecoder />}</>}
+      {activeTab === "place" && <><PlaceBasics region={region} /><SignalText>{region.layerHighlights.geology}</SignalText>{region.id === "barolo" && <BaroloSiteModel />}{region.id === "collio" && <MineralDecoder />}</>}
       {activeTab === "chemistry" && <><SignalText featured>{chemistryText}</SignalText>{region.id === "barolo" && <MolecularFingerprint key="barolo-chemistry" layer="chemistry" signals={baroloMolecularSignals} claims={claims} sources={sources} />}{region.id === "chianti-classico" && <MolecularFingerprint key="chianti-chemistry" layer="chemistry" signals={chiantiMolecularSignals} claims={claims} sources={sources} />}</>}
       {activeTab === "structure" && <><SignalText>{region.layerHighlights.phenolics}</SignalText><p className="mt-2 text-[11px] leading-5 text-[color:var(--muted)]">{region.layerHighlights.palate}</p>{region.id === "barolo" && <MolecularFingerprint key="barolo-phenolics" layer="phenolics" signals={baroloMolecularSignals} claims={claims} sources={sources} />}<StructureProfile region={region} /></>}
       {activeTab === "rules" && <><SignalText>{region.layerHighlights.rules}</SignalText>{region.id === "chianti-classico" && <ChiantiClassicoRules />}</>}
       {activeTab === "producers" && <ReferenceProducers region={region} />}
     </section>
   );
+}
+
+function PlaceBasics({ region }: { region: Region }) {
+  const basics: Partial<Record<RegionId, string>> = {
+    barolo: "Barolo is a small red-wine DOCG in north-west Italy, made entirely from Nebbiolo. Its vineyard villages sit in the Langhe hills; the key lesson is that those hills are not one uniform patch of ground.",
+    "chianti-classico": "Chianti Classico is the historic hillside zone between Florence and Siena. It is a Sangiovese-led red-wine DOCG, but its villages and slopes are varied enough that the name is a starting point, not a single taste.",
+    jura: "Jura is a compact wine region in eastern France. It makes very different wines from the same landscape—from fresh topped-up whites to savoury veil-aged wines—so place alone never tells the whole story.",
+    collio: "Collio is a hilly white-wine appellation on Italy's north-eastern border. Its distinctive ponca is an important part of the growing environment, while grape choice and skin contact still make a major difference to the wine.",
+  };
+  return <div className="mt-1 rounded-lg border border-[color:var(--line)] bg-black/10 p-3"><p className="font-mono text-[8px] uppercase tracking-[.16em] text-[color:var(--oxidised-gold)]">Start here</p><p className="mt-1 text-[13px] leading-5 text-[color:var(--foreground)]">{basics[region.id] ?? region.summary}</p></div>;
 }
 
 function SignalText({ children, featured = false }: { children: string; featured?: boolean }) {
