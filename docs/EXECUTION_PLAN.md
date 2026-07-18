@@ -29,8 +29,9 @@ The entire demo follows one page and five beats:
 1. **Atlas:** France and Italy, four hero regions, and a one-line proposition.
 2. **Collio:** select ponca and show geology with careful causal language.
 3. **Jura:** select sotolon and distinguish sous-voile from ouillé styles.
-4. **Compare:** Barolo versus Chianti Classico across structure, pigments, and
-   blind-tasting discriminators.
+4. **Compare:** Barolo versus Chianti Classico across structure and pigments;
+   use Barolo to expose why a formation-to-style shortcut fails before moving
+   to blind-tasting discriminators.
 5. **Teach:** answer a Chianti Classico legal challenge, run one Sol synthesis,
    and re-explain it quickly with Terra at a chosen learning level.
 

@@ -10,8 +10,8 @@ export const demoFallbacks = [
   {
     id: "compare-barolo-chianti",
     prompts: ["compare barolo and chianti", "barolo vs chianti classico", "head to head"],
-    answer: "Barolo is legally 100% Nebbiolo and the training archetype pairs relatively pale, garnet colour with high, drying tannin. Chianti Classico is 80-100% Sangiovese and typically reads as ruby, sour-cherry-led and acid-driven, with firm but less massive tannin in our editorial range. Chemistry supports the paradox, not a rigid score: both cultivars can show highly polymerised proanthocyanins, while their pigment profiles vary by sample and vinification.",
-    claimIds: ["barolo-nebbiolo-100", "chianti-sangiovese-80", "nebbiolo-pigment-tannin-pattern", "barolo-chianti-astringency-comparison"],
+    answer: "Barolo is legally 100% Nebbiolo and the training archetype pairs relatively pale, garnet colour with high, drying tannin. Chianti Classico is 80-100% Sangiovese and typically reads as ruby, sour-cherry-led and acid-driven, with firm but less massive tannin in our editorial range. Chemistry supports the paradox, not a rigid score: both cultivars can show highly polymerised proanthocyanins, while their pigment profiles vary by sample and vinification. Place needs the same discipline: Barolo's Tortonian-elegance versus Serravallian-power shortcut cannot substitute for soil evolution, slope, exposure and microclimate.",
+    claimIds: ["barolo-nebbiolo-100", "chianti-sangiovese-80", "nebbiolo-pigment-tannin-pattern", "barolo-chianti-astringency-comparison", "barolo-site-before-style"],
   },
   {
     id: "explain-anthocyanins",

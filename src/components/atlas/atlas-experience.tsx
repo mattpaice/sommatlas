@@ -46,6 +46,17 @@ function confidenceTone(confidence: Claim["confidence"]) {
       : "border-white/15 bg-white/5 text-[color:var(--muted)]";
 }
 
+function claimMatchesLayer(claim: Claim, layer: LayerId) {
+  if (layer === "rules") return claim.claimType === "legal";
+  if (layer === "geology") {
+    return claim.claimType === "geology" || claim.id === "barolo-site-before-style";
+  }
+  if (layer === "palate") {
+    return ["editorial_interpretation", "common_practice", "historical_practice"].includes(claim.claimType);
+  }
+  return claim.claimType === "measured" || claim.claimType === "published_association";
+}
+
 export function AtlasExperience({ regions, claims, sources, challenges }: AtlasExperienceProps) {
   const [activeLayer, setActiveLayer] = useState<LayerId>("geology");
   const [selectedId, setSelectedId] = useState<RegionId>("barolo");
@@ -63,15 +74,19 @@ export function AtlasExperience({ regions, claims, sources, challenges }: AtlasE
     () => claims.filter((claim) => claim.subjectId === selected?.id && claim.status === "verified"),
     [claims, selected],
   );
+  const layerClaims = useMemo(() => {
+    const relevant = selectedClaims.filter((claim) => claimMatchesLayer(claim, activeLayer));
+    return relevant.length > 0 ? relevant : selectedClaims;
+  }, [activeLayer, selectedClaims]);
   const selectedSources = useMemo(() => {
-    const ids = new Set(selectedClaims.flatMap((claim) => claim.sourceIds));
+    const ids = new Set(layerClaims.flatMap((claim) => claim.sourceIds));
     return sources.filter((source) => ids.has(source.id));
-  }, [selectedClaims, sources]);
-  const chiantiChallenge = challenges.find((challenge) => challenge.regionId === "chianti-classico") ?? challenges[0];
+  }, [layerClaims, sources]);
+  const activeChallenge = challenges.find((challenge) => challenge.regionId === selected?.id) ?? challenges[0];
   const barolo = regions.find((region) => region.id === "barolo");
   const chianti = regions.find((region) => region.id === "chianti-classico");
 
-  if (!selected || !chiantiChallenge || !barolo || !chianti) return null;
+  if (!selected || !activeChallenge || !barolo || !chianti) return null;
 
   const active = layers.find((layer) => layer.id === activeLayer) ?? layers[0];
   const synthesisPrompt = mode === "sol"
@@ -126,7 +141,7 @@ export function AtlasExperience({ regions, claims, sources, challenges }: AtlasE
             <div aria-hidden className="absolute right-[7%] top-[1%] h-[94%] w-[45%] bg-[color:var(--ponca)] opacity-25 [mask:url('/maps/italy.svg')_center/contain_no-repeat]" />
             <div className="absolute left-[17%] top-[18%] font-mono text-[10px] tracking-[.24em] text-[color:var(--limestone)]/70">FRANCE</div>
             <div className="absolute right-[14%] top-[15%] font-mono text-[10px] tracking-[.24em] text-[color:var(--ponca)]/70">ITALY</div>
-            {regions.map((region) => <Hotspot key={region.id} region={region} active={selected.id === region.id} colour={active.colour} onSelect={() => setSelectedId(region.id)} />)}
+            {regions.map((region) => <Hotspot key={region.id} region={region} active={selected.id === region.id} colour={active.colour} onSelect={() => { setSelectedId(region.id); setChallengeAnswer(null); }} />)}
           </div>
           <div className="relative mt-auto flex items-center justify-between border-t border-[color:var(--line)] pt-4 text-[11px] text-[color:var(--muted)]"><span>Four study regions · {active.label.toLowerCase()} evidence</span><span>Not to scale</span></div>
         </section>
@@ -136,10 +151,10 @@ export function AtlasExperience({ regions, claims, sources, challenges }: AtlasE
           <div className="mt-2 flex items-start justify-between gap-3"><div><h2 className="font-serif text-3xl tracking-tight">{selected.name}</h2><p className="mt-1 text-sm text-[color:var(--muted)]">{selected.location} · {countryLabel[selected.country]}</p></div><span className="rounded-full border border-[color:var(--line)] px-2 py-1 font-mono text-[9px] tracking-wider text-[color:var(--muted)]">{selected.entityType.replace("_", " ")}</span></div>
           <p className="mt-5 text-sm leading-6 text-[color:var(--muted)]">{selected.summary}</p>
 
-          <div className="mt-6 border-y border-[color:var(--line)] py-4"><p className="font-mono text-[10px] uppercase tracking-[.2em] text-[color:var(--muted)]">{active.label} signal</p><p className="mt-2 text-sm leading-6">{selected.layerHighlights[activeLayer]}</p></div>
+          <div className="mt-6 border-y border-[color:var(--line)] py-4"><p className="font-mono text-[10px] uppercase tracking-[.2em] text-[color:var(--muted)]">{active.label} signal</p><p className="mt-2 text-sm leading-6">{selected.layerHighlights[activeLayer]}</p>{selected.id === "barolo" && activeLayer === "geology" && <BaroloSiteModel />}</div>
           <div className="mt-5"><p className="font-mono text-[10px] uppercase tracking-[.2em] text-[color:var(--muted)]">Primary grapes</p><div className="mt-2 flex flex-wrap gap-2">{selected.grapes.map((grape) => <span key={grape} className="rounded-full bg-white/[.06] px-2.5 py-1 text-xs">{grape}</span>)}</div></div>
 
-          <Evidence claims={selectedClaims.slice(0, 2)} sources={selectedSources} />
+          <Evidence claims={layerClaims.slice(0, 2)} sources={selectedSources} />
         </aside>
 
         <section className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--panel)] p-5 md:p-6 xl:col-span-2">
@@ -150,13 +165,18 @@ export function AtlasExperience({ regions, claims, sources, challenges }: AtlasE
       </div>
 
       {comparisonOpen && <ComparisonSheet barolo={barolo} chianti={chianti} onClose={() => setComparisonOpen(false)} />}
-      <ChallengeCard challenge={chiantiChallenge} answer={challengeAnswer} onAnswer={setChallengeAnswer} claims={claims} />
+      <ChallengeCard challenge={activeChallenge} answer={challengeAnswer} onAnswer={setChallengeAnswer} claims={claims} sources={sources} />
     </main>
   );
 }
 
 function Hotspot({ region, active, colour, onSelect }: { region: Region; active: boolean; colour: string; onSelect: () => void }) {
   return <button aria-label={`Explore ${region.name}`} onClick={onSelect} className="group absolute z-10 -translate-x-1/2 -translate-y-1/2 text-left" style={{ left: `${region.map.countryX}%`, top: `${region.map.countryY}%` }}><span className="relative flex h-5 w-5 items-center justify-center rounded-full border border-white/40 bg-[#11110f] shadow-[0_0_0_5px_rgba(17,17,15,.7)]"><span className={`h-2 w-2 rounded-full ${active ? "animate-pulse" : ""}`} style={{ backgroundColor: colour }} /></span><span className={`absolute left-4 top-1/2 w-max -translate-y-1/2 rounded-md border border-[color:var(--line)] bg-[#171713]/95 px-2 py-1 font-mono text-[9px] uppercase tracking-wider transition ${active ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>{region.name}</span></button>;
+}
+
+function BaroloSiteModel() {
+  const factors = ["Formation", "Soil evolution", "Slope + elevation", "Exposure + microclimate", "Bounded hypothesis"];
+  return <div className="mt-4"><p className="font-mono text-[9px] uppercase tracking-[.18em] text-[color:var(--oxidised-gold)]">Site before style</p><ol className="mt-2 grid grid-cols-2 gap-1.5">{factors.map((factor, index) => <li key={factor} className={`rounded-md border border-[color:var(--line)] bg-black/10 px-2 py-1.5 text-[10px] leading-4 ${index === factors.length - 1 ? "col-span-2 text-[color:var(--sage)]" : "text-[color:var(--muted)]"}`}><span className="mr-1.5 font-mono text-[color:var(--oxidised-gold)]">{index + 1}</span>{factor}</li>)}</ol></div>;
 }
 
 function Evidence({ claims, sources }: { claims: Claim[]; sources: Source[] }) {
@@ -172,6 +192,6 @@ function Range({ label, range, colour }: { label: string; range: Region["archety
 
 function Insight({ region }: { region: Region }) { return <div className="rounded-lg bg-white/[.035] p-3"><p className="text-xs font-medium">{region.name}</p><p className="mt-1 text-[11px] leading-5 text-[color:var(--muted)]">{region.archetype.cues.slice(0, 2).join(" · ")}</p></div>; }
 
-function ChallengeCard({ challenge, answer, onAnswer, claims }: { challenge: Challenge; answer: boolean | null; onAnswer: (answer: boolean) => void; claims: Claim[] }) { const relevant = claims.filter((claim) => challenge.claimIds.includes(claim.id)); const revealed = answer !== null; return <section className="mx-auto mb-12 max-w-[760px] px-5"><div className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--panel)] p-5 md:p-6"><div className="flex gap-3"><CircleHelp className="mt-0.5 shrink-0 text-[color:var(--oxidised-gold)]" size={20} /><div><p className="font-mono text-[10px] uppercase tracking-[.2em] text-[color:var(--oxidised-gold)]">Appellation challenge</p><h2 className="mt-2 font-serif text-xl">{challenge.question}</h2></div></div>{!revealed ? <div className="mt-5 flex gap-2"><button onClick={() => onAnswer(true)} className="rounded-lg border border-[color:var(--line)] px-4 py-2 text-sm hover:bg-white/5">Yes, legal</button><button onClick={() => onAnswer(false)} className="rounded-lg border border-[color:var(--line)] px-4 py-2 text-sm hover:bg-white/5">No, not legal</button></div> : <div className="mt-5 rounded-xl border border-[color:var(--line)] bg-black/10 p-4"><p className="text-sm font-medium" style={{ color: answer === challenge.answer ? "var(--sage)" : "var(--garnet)" }}>{answer === challenge.answer ? "Correct." : `Not quite — ${challenge.answerLabel}.`}</p><p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">{challenge.explanation}</p>{relevant.map((claim) => <p key={claim.id} className="mt-3 border-l-2 border-[color:var(--oxidised-gold)] pl-3 text-xs text-[color:var(--limestone)]">{claim.evidence.locator}</p>)}</div>}</div></section>; }
+function ChallengeCard({ challenge, answer, onAnswer, claims, sources }: { challenge: Challenge; answer: boolean | null; onAnswer: (answer: boolean) => void; claims: Claim[]; sources: Source[] }) { const relevant = claims.filter((claim) => challenge.claimIds.includes(claim.id)); const sourceIds = new Set(relevant.flatMap((claim) => claim.sourceIds)); const relevantSources = sources.filter((source) => sourceIds.has(source.id)); const revealed = answer !== null; return <section className="mx-auto mb-12 max-w-[760px] px-5"><div className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--panel)] p-5 md:p-6"><div className="flex gap-3"><CircleHelp className="mt-0.5 shrink-0 text-[color:var(--oxidised-gold)]" size={20} /><div><p className="font-mono text-[10px] uppercase tracking-[.2em] text-[color:var(--oxidised-gold)]">Evidence challenge</p><h2 className="mt-2 font-serif text-xl">{challenge.question}</h2></div></div>{!revealed ? <div className="mt-5 flex gap-2"><button onClick={() => onAnswer(true)} className="rounded-lg border border-[color:var(--line)] px-4 py-2 text-sm hover:bg-white/5">Yes</button><button onClick={() => onAnswer(false)} className="rounded-lg border border-[color:var(--line)] px-4 py-2 text-sm hover:bg-white/5">No</button></div> : <div className="mt-5 rounded-xl border border-[color:var(--line)] bg-black/10 p-4"><p className="text-sm font-medium" style={{ color: answer === challenge.answer ? "var(--sage)" : "var(--garnet)" }}>{answer === challenge.answer ? "Correct." : `Not quite — ${challenge.answerLabel}.`}</p><p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">{challenge.explanation}</p>{relevant.map((claim) => <p key={claim.id} className="mt-3 border-l-2 border-[color:var(--oxidised-gold)] pl-3 text-xs text-[color:var(--limestone)]">{claim.evidence.locator}</p>)}<div className="mt-3 flex flex-wrap gap-2">{relevantSources.map((source) => <a key={source.id} href={source.url} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-[10px] text-[color:var(--limestone)] hover:underline">{source.publisher}<ArrowUpRight size={10} /></a>)}</div></div>}</div></section>; }
 
 function ModeButton({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) { return <button onClick={onClick} className={`rounded-md px-2.5 py-1.5 text-[10px] font-medium transition sm:text-xs ${active ? "bg-[color:var(--foreground)] text-[color:var(--background)]" : "text-[color:var(--muted)] hover:text-[color:var(--foreground)]"}`}>{label}</button>; }

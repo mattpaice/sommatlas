@@ -35,6 +35,7 @@ export const SourceSchema = z.object({
     "official_institutional",
     "primary_research",
     "peer_reviewed_review",
+    "expert_reference",
   ]),
   publishedAt: z.string().nullable(),
   effectiveAt: z.string().nullable(),

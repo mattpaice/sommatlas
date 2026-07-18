@@ -11,6 +11,15 @@ export const challenges = [
     claimIds: ["chianti-sangiovese-80", "chianti-no-white-grapes"],
   },
   {
+    id: "barolo-geology-shortcut",
+    regionId: "barolo",
+    question: "Can 'Tortonian means elegance; Serravallian means power' reliably predict an MGA's style?",
+    answer: false,
+    answerLabel: "No — it is an attractive but unreliable shortcut.",
+    explanation: "Formation matters, but it is only one layer. Soil evolution, slope, elevation, exposure, shading and local microclimate interact before vintage and cellar choices enter the picture. Treat the result as a site hypothesis, not a tasting-note formula.",
+    claimIds: ["barolo-formation-mosaic", "barolo-site-before-style"],
+  },
+  {
     id: "barolo-wood-only",
     regionId: "barolo",
     question: "Must all 38 months of Barolo's minimum maturation take place in wood?",

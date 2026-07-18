@@ -44,8 +44,8 @@ evidence synthesis behind map interactions and comparison views.
 3. Switch to aroma chemistry and use **sotolon/Jura** to distinguish compound,
    production pathway, and regional association.
 4. Compare **Barolo** with **Chianti Classico**. Show their shared acid-and-tannin
-   structure, then reveal their different anthocyanin, aroma, and palate
-   architectures.
+   structure, reject the Tortonian-elegance/Serravallian-power shortcut, then
+   reveal their different anthocyanin, aroma, and palate architectures.
 5. Switch to **Appellation rules** and answer a “Could this be…?” question about
    whether white grapes may be included in Chianti Classico.
 6. Ask Sol one difficult synthesis question. It retrieves the relevant region,
@@ -76,6 +76,8 @@ time allows. Breadth is a post-hackathon task.
 ### 2. Region profile
 
 - Geological formation and site context.
+- A Barolo “site before style” chain: formation, soil evolution, slope/elevation,
+  exposure/microclimate, then a bounded sensory hypothesis.
 - Principal grapes and wine archetypes.
 - Aroma compound families with evidence strength.
 - Palate and phenolic fingerprints.

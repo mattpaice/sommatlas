@@ -12,7 +12,7 @@ export const regions = [
     grapes: ["Nebbiolo"],
     map: { countryX: 69, countryY: 30 },
     layerHighlights: {
-      geology: "Clayey-calcareous hillside sites; eligibility spans meaningful local variation.",
+      geology: "Formation is only the first layer: soil evolution, slope, elevation, exposure and microclimate complicate every MGA shortcut.",
       chemistry: "Nebbiolo's colour depends on a relatively small and reactive anthocyanin pool.",
       phenolics: "Low pigment does not mean low tannin; treat their ratio as a structural clue.",
       palate: "Aromatic lift, high acidity and drying tannin are the teaching archetype.",
@@ -23,6 +23,8 @@ export const regions = [
       "barolo-ageing-38-18",
       "barolo-vineyard-conditions",
       "barolo-legal-profile",
+      "barolo-formation-mosaic",
+      "barolo-site-before-style",
       "nebbiolo-pigment-tannin-pattern",
       "nebbiolo-anthocyanin-profile",
     ],
