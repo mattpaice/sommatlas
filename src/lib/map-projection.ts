@@ -93,8 +93,10 @@ export function projectCountryPoint(
 
   const x = metadata.mercator.translateX + metadata.mercator.scale * longitudeRadians;
   const y = metadata.mercator.translateY - metadata.mercator.scale * mercatorY;
-  const xPercent = (x / metadata.viewBox.width) * 100;
-  const yPercent = (y / metadata.viewBox.height) * 100;
+  // CSSOM serializes percentage values at limited precision. Explicitly
+  // matching that precision keeps server and client style strings identical.
+  const xPercent = Number(((x / metadata.viewBox.width) * 100).toFixed(4));
+  const yPercent = Number(((y / metadata.viewBox.height) * 100).toFixed(4));
 
   return {
     x,
