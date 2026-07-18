@@ -95,8 +95,9 @@ export const RegionSchema = z.object({
   summary: z.string(),
   grapes: z.array(z.string()),
   map: z.object({
-    countryX: z.number(),
-    countryY: z.number(),
+    longitude: z.number().min(-180).max(180),
+    latitude: z.number().min(-90).max(90),
+    anchorLabel: z.string(),
   }),
   layerHighlights: z.object({
     geology: z.string(),

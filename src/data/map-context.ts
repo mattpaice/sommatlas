@@ -2,12 +2,12 @@
  * Non-interactive training anchors for the shared 0–100 atlas canvas.
  *
  * These are representative points, not appellation polygons. Longitude and
- * latitude identify the place used to calibrate each point; `map` is the same
- * whole-atlas coordinate system used by Region.map.
+ * latitude identify the place used to calibrate each point. The UI projects
+ * them through `projectCountryPoint`, just like the hero regions.
  *
  * Country outlines: Natural Earth Admin 0 Countries, 1:50m, v5.1.1
- * (public domain). The France points were projected with the same Mercator
- * transform as public/maps/france.svg and then translated into the UI canvas.
+ * (public domain). `src/lib/map-projection.ts` reproduces the exact Mercator
+ * transform used by public/maps/france.svg.
  */
 
 export type MapContextGroup = "burgundy" | "bordeaux" | "rhone";
@@ -31,11 +31,6 @@ export interface MapContextPoint {
     latitude: number;
     locality: string;
   };
-  /** Position in the existing whole-atlas 0–100 coordinate system. */
-  map: {
-    countryX: number;
-    countryY: number;
-  };
 }
 
 export const mapContextPoints = [
@@ -46,7 +41,6 @@ export const mapContextPoints = [
     country: "FR",
     status: "context-only",
     anchor: { longitude: 4.95, latitude: 47.15, locality: "Nuits-Saint-Georges" },
-    map: { countryX: 36.5, countryY: 39.9 },
   },
   {
     id: "cote-de-beaune",
@@ -55,7 +49,6 @@ export const mapContextPoints = [
     country: "FR",
     status: "context-only",
     anchor: { longitude: 4.78, latitude: 46.98, locality: "Beaune" },
-    map: { countryX: 36, countryY: 41.2 },
   },
   {
     id: "beaujolais",
@@ -64,7 +57,6 @@ export const mapContextPoints = [
     country: "FR",
     status: "context-only",
     anchor: { longitude: 4.7, latitude: 46.15, locality: "Beaujeu" },
-    map: { countryX: 35.7, countryY: 47.2 },
   },
   {
     id: "bordeaux-left-bank",
@@ -73,7 +65,6 @@ export const mapContextPoints = [
     country: "FR",
     status: "context-only",
     anchor: { longitude: -0.75, latitude: 45.2, locality: "Médoc" },
-    map: { countryX: 19.8, countryY: 54 },
   },
   {
     id: "bordeaux-right-bank",
@@ -82,7 +73,6 @@ export const mapContextPoints = [
     country: "FR",
     status: "context-only",
     anchor: { longitude: -0.15, latitude: 44.9, locality: "Saint-Émilion" },
-    map: { countryX: 21.5, countryY: 56.1 },
   },
   {
     id: "northern-rhone",
@@ -91,7 +81,6 @@ export const mapContextPoints = [
     country: "FR",
     status: "context-only",
     anchor: { longitude: 4.84, latitude: 45.07, locality: "Tain-l'Hermitage" },
-    map: { countryX: 36.1, countryY: 54.9 },
   },
   {
     id: "southern-rhone",
@@ -100,6 +89,5 @@ export const mapContextPoints = [
     country: "FR",
     status: "context-only",
     anchor: { longitude: 4.83, latitude: 44.06, locality: "Châteauneuf-du-Pape" },
-    map: { countryX: 36.1, countryY: 62 },
   },
 ] as const satisfies readonly MapContextPoint[];

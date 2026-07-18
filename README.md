@@ -35,6 +35,18 @@ anchors for Burgundy, Bordeaux and the Rhône. Barolo's chemistry and phenolics
 layers expose an interactive, primary-research-backed molecular fingerprint:
 named aroma precursors, volatiles, anthocyanins and proanthocyanidin units.
 
+## Adding map locations
+
+Map markers are geographic data, not screen positions. Add a representative
+WGS84 longitude/latitude and a named locality to `src/data/regions.ts` or
+`src/data/map-context.ts`; `src/lib/map-projection.ts` applies the exact
+Mercator transform used to generate each Natural Earth country SVG. This keeps
+locations stable across viewport sizes and avoids hand-tuned percentages.
+
+Context labels are shown one family at a time. Their lanes are sorted in the
+same north-to-south order as their markers, so leader lines cannot cross; the
+shared France-side rail also stays clear of Italy's interactive region labels.
+
 ## Evidence principles
 
 - Never imply that soil directly creates an aroma compound.

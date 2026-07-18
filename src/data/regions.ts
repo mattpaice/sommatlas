@@ -10,7 +10,7 @@ export const regions = [
     eyebrow: "Nebbiolo under tension",
     summary: "A legal and chemical paradox: garnet colour and limited pigment can coexist with formidable, persistent tannin.",
     grapes: ["Nebbiolo"],
-    map: { countryX: 69, countryY: 30 },
+    map: { longitude: 7.94, latitude: 44.61, anchorLabel: "Barolo" },
     layerHighlights: {
       geology: "Formation is only the first layer: soil evolution, slope, elevation, exposure and microclimate complicate every MGA shortcut.",
       chemistry: "Track glycosidic C13-norisoprenoid precursors (3-hydroxy-beta-damascone, 3-oxo-alpha-ionol, blumenol C, vomifoliol), finished-wine linalool and geraniol, then ageing aldehydes such as acetaldehyde and methional—without equating any one molecule to a tasting note.",
@@ -58,7 +58,7 @@ export const regions = [
     eyebrow: "Sangiovese, legally framed",
     summary: "A hillside Sangiovese study in fresh acidity, red-fruit clarity and dynamic tannin—with a deceptively good rules quiz.",
     grapes: ["Sangiovese", "Permitted red-berried complementary varieties"],
-    map: { countryX: 75, countryY: 55 },
+    map: { longitude: 11.29, latitude: 43.47, anchorLabel: "Castellina in Chianti" },
     layerHighlights: {
       geology: "A mosaic of sandstone, limestone, marl, schist and alluvial material—not one soil.",
       chemistry: "A disubstituted, low-acylation anthocyanin profile rewards careful colour management.",
@@ -97,7 +97,7 @@ export const regions = [
     eyebrow: "One region, divergent cellar paths",
     summary: "A region—not an appellation—where topped-up whites and veil-aged wines make oxygen, yeast and time visible in the glass.",
     grapes: ["Savagnin", "Chardonnay", "Poulsard", "Trousseau", "Pinot Noir"],
-    map: { countryX: 43, countryY: 44 },
+    map: { longitude: 5.77, latitude: 46.9, anchorLabel: "Arbois" },
     layerHighlights: {
       geology: "Marl and limestone recur, but the region and its appellations remain locally varied.",
       chemistry: "Sotolon is a key marker of Vin Jaune's film-ageing chemistry, not a complete aroma explanation.",
@@ -136,7 +136,7 @@ export const regions = [
     eyebrow: "Read the layers, not the myth",
     summary: "Ponca makes geology dramatically legible: alternating marl and sandstone shape the hillside environment without becoming literal rock flavour.",
     grapes: ["Friulano", "Ribolla Gialla", "Malvasia Istriana", "Pinot Grigio", "Sauvignon", "Chardonnay"],
-    map: { countryX: 86, countryY: 27 },
+    map: { longitude: 13.47, latitude: 45.96, anchorLabel: "Cormons" },
     layerHighlights: {
       geology: "Ponca is local flysch: repeated layers of marl and sandstone formed from marine sediments.",
       chemistry: "Acidity, aroma precursors and texture arise through vine and cellar processes—not dissolved flavour rocks.",
