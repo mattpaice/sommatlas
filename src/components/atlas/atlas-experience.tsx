@@ -2,7 +2,7 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import {
   ArrowUpRight,
   Atom,
@@ -36,12 +36,24 @@ type AtlasExperienceProps = {
 };
 
 const profileTabs = [
-  { id: "place", label: "Place", icon: MapPinned, colour: "var(--ponca)" },
   { id: "chemistry", label: "Chemistry", icon: Atom, colour: "var(--oxidised-gold)" },
   { id: "structure", label: "Structure", icon: Wine, colour: "var(--garnet)" },
+  { id: "place", label: "Place", icon: MapPinned, colour: "var(--ponca)" },
   { id: "rules", label: "Rules", icon: ShieldCheck, colour: "var(--limestone)" },
   { id: "producers", label: "Producers", icon: Users, colour: "var(--sage)" },
 ] as const;
+
+const glossary: Record<string, string> = {
+  MGA: "Menzione Geografica Aggiuntiva: Barolo's official additional geographical unit, used to identify a delimited named place.",
+  Tortonian: "A geological age/stage within the Miocene. In Barolo shorthand it is often used for younger sedimentary material; it is not itself a soil type or a style guarantee.",
+  Serravallian: "An older Miocene geological age/stage. In Barolo shorthand it is often contrasted with Tortonian material; it is not itself a soil type or a style guarantee.",
+  formation: "A named body of rock defined by its origin and characteristics. A formation is underlying geology, not a complete description of the vineyard soil.",
+  monoterpene: "A family of volatile aroma compounds; linalool and geraniol are examples. Their sensory effect depends on concentration and the wine matrix.",
+  norisoprenoid: "A family of aroma compounds derived from carotenoid breakdown. Some occur first as bound grape precursors and can be released or transformed later.",
+  "glycosidic precursor": "A non-volatile grape compound in which an aroma-related molecule is bound to sugar. Fermentation, acid or ageing can help release or transform it.",
+  anthocyanin: "A family of red-blue grape-skin pigments. Their amount and form influence colour, but colour evolution continues during winemaking and ageing.",
+  proanthocyanidin: "A condensed tannin made from flavan-3-ol building blocks. Chain length and composition help shape astringency.",
+};
 
 type ProfileTabId = (typeof profileTabs)[number]["id"];
 
@@ -83,7 +95,7 @@ function claimMatchesTab(claim: Claim, tab: ProfileTabId) {
 }
 
 export function AtlasExperience({ regions, claims, sources, challenges }: AtlasExperienceProps) {
-  const [activeTab, setActiveTab] = useState<ProfileTabId>("place");
+  const [activeTab, setActiveTab] = useState<ProfileTabId>("chemistry");
   const [theme, setTheme] = useState<ThemeId>("harvest");
   const [selectedId, setSelectedId] = useState<RegionId>("barolo");
   const [focusedContextId, setFocusedContextId] = useState<MapContextPoint["id"] | null>(null);
@@ -238,6 +250,7 @@ export function AtlasExperience({ regions, claims, sources, challenges }: AtlasE
 
         <aside className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--panel)] p-5 md:p-6">
           <div className="flex items-start justify-between gap-3"><div><h2 className="font-serif text-3xl tracking-tight">{selected.name}</h2><p className="mt-1 text-sm text-[color:var(--muted)]">{selected.location} · {countryLabel[selected.country]}</p></div><span className="rounded-full border border-[color:var(--line)] px-2 py-1 font-mono text-[9px] tracking-wider text-[color:var(--muted)]">{selected.entityType.replace("_", " ")}</span></div>
+          <RegionalOverview region={selected} />
 
           <ExpressionSelector region={selected} expressions={availableExpressions} selected={selectedExpression} onSelect={setExpressionId} />
           <ProfileTabs activeTab={activeTab} onSelect={setActiveTab} />
@@ -341,6 +354,18 @@ function ExpressionField({ label, value, database = false }: { label: string; va
   return <div className="min-w-0 border-l border-[color:var(--line)] pl-2 first:border-l-0 first:pl-0"><p className="font-mono text-[8px] uppercase tracking-[.12em] text-[color:var(--muted)]">{label}</p><p className="mt-1 truncate text-[10px] font-medium text-[color:var(--foreground)]" title={value}>{value}</p>{database && <p className="mt-0.5 font-mono text-[7px] uppercase tracking-[.08em] text-[color:var(--sage)]">Grape database</p>}</div>;
 }
 
+function GlossaryTerm({ term, children }: { term: string; children?: ReactNode }) {
+  const definition = glossary[term.toLowerCase()] ?? glossary[term];
+  if (!definition) return <>{children ?? term}</>;
+  return <span tabIndex={0} aria-label={`${term}: ${definition}`} className="group relative inline-flex cursor-help outline-none"><span className="border-b border-dotted border-[color:var(--oxidised-gold)]/70">{children ?? term}</span><span role="tooltip" className="pointer-events-none absolute bottom-full left-0 z-40 mb-2 w-64 rounded-md border border-[color:var(--line-strong)] bg-[#161512] p-2.5 text-left font-sans text-[10px] normal-case leading-4 tracking-normal text-[color:var(--foreground)] opacity-0 shadow-xl transition-opacity group-hover:opacity-100 group-focus:opacity-100">{definition}</span></span>;
+}
+
+function RegionalOverview({ region }: { region: Region }) {
+  if (region.id === "barolo") return <section className="mt-4 rounded-lg border border-[color:var(--line)] bg-black/10 p-3"><p className="font-mono text-[8px] uppercase tracking-[.16em] text-[color:var(--oxidised-gold)]">Orientation</p><p className="mt-1 text-[11px] leading-5 text-[color:var(--foreground)]">The familiar broad-brush contrast is <GlossaryTerm term="Tortonian" /> material tending sandier and <GlossaryTerm term="Serravallian" /> material tending more clay-rich. Start there, then resolve it through named <GlossaryTerm term="formation" />s, slope and soil evolution.</p><p className="mt-2 text-[10px] leading-4 text-[color:var(--muted)]"><span className="font-medium text-[color:var(--foreground)]">Serralunga lens:</span> much of the commune sits on the Lequio Formation’s sandstone–marl sequence, shared with eastern Monforte; individual <GlossaryTerm term="MGA" />s still differ in exposure, soil depth and water behaviour.</p></section>;
+  if (region.id === "chianti-classico") return <section className="mt-4 rounded-lg border border-[color:var(--line)] bg-black/10 p-3"><p className="font-mono text-[8px] uppercase tracking-[.16em] text-[color:var(--oxidised-gold)]">Orientation</p><p className="mt-1 text-[11px] leading-5 text-[color:var(--foreground)]">Think in slope systems before a single “Chianti soil”: Panzano spans a generally cooler eastern side in the Greve catchment and a western side that falls toward the Pesa.</p><p className="mt-2 text-[10px] leading-4 text-[color:var(--muted)]"><span className="font-medium text-[color:var(--foreground)]">Conca d’Oro lens:</span> the amphitheatre south of Panzano is part of that western side, not a synonym for all Panzano. Its particular aspect, elevation and diurnal range are a site lens—not a universal flavour rule.</p></section>;
+  return <p className="mt-3 text-[11px] leading-5 text-[color:var(--muted)]">{region.summary}</p>;
+}
+
 function ProfileTabs({ activeTab, onSelect }: { activeTab: ProfileTabId; onSelect: (tab: ProfileTabId) => void }) {
   return (
     <nav aria-label="Appellation evidence" className="mt-5 grid grid-cols-5 gap-1 border-b border-[color:var(--line)]" role="tablist">
@@ -383,7 +408,7 @@ function StructureProfile({ region }: { region: Region }) {
 
 function BaroloSiteModel() {
   const factors = ["Formation", "Soil properties", "Water + root environment", "Slope + microclimate", "Vine response + farming", "Bounded hypothesis"];
-  return <div className="mt-4"><p className="font-mono text-[9px] uppercase tracking-[.18em] text-[color:var(--oxidised-gold)]">Site before style</p><ol className="mt-2 grid grid-cols-2 gap-1.5">{factors.map((factor, index) => <li key={factor} className={`rounded-md border border-[color:var(--line)] bg-black/10 px-2 py-1.5 text-[10px] leading-4 ${index === factors.length - 1 ? "col-span-2 text-[color:var(--sage)]" : "text-[color:var(--muted)]"}`}><span className="mr-1.5 font-mono text-[color:var(--oxidised-gold)]">{index + 1}</span>{factor}</li>)}</ol></div>;
+  return <div className="mt-4"><p className="font-mono text-[9px] uppercase tracking-[.18em] text-[color:var(--oxidised-gold)]">Site before style</p><ol className="mt-2 grid grid-cols-2 gap-1.5">{factors.map((factor, index) => <li key={factor} className={`rounded-md border border-[color:var(--line)] bg-black/10 px-2 py-1.5 text-[10px] leading-4 ${index === factors.length - 1 ? "col-span-2 text-[color:var(--sage)]" : "text-[color:var(--muted)]"}`}><span className="mr-1.5 font-mono text-[color:var(--oxidised-gold)]">{index + 1}</span>{factor === "Formation" ? <GlossaryTerm term="formation">Formation</GlossaryTerm> : factor}</li>)}</ol></div>;
 }
 
 function MineralDecoder() {
@@ -444,7 +469,12 @@ function MolecularFingerprint({ layer, signals: signalLibrary, claims, sources }
   const source = sources.find((candidate) => claim?.sourceIds.includes(candidate.id));
   if (!selectedSignal) return null;
 
-  return <div className="mt-5"><div className="flex items-center justify-between gap-2"><p className="font-mono text-[10px] uppercase tracking-[.18em] text-[color:var(--oxidised-gold)]">{layer === "chemistry" ? "Volatile + precursor library" : "Pigment + tannin architecture"}</p><span className="font-mono text-[9px] text-[color:var(--muted)]">{signals.length} signals</span></div><div className="mt-3 grid grid-cols-2 gap-2">{signals.map((signal) => <button key={signal.id} onClick={() => setSelectedSignalId(signal.id)} className={`min-w-0 rounded-md border px-3 py-2 text-left transition ${signal.id === selectedSignal.id ? "border-[color:var(--oxidised-gold)]/60 bg-[color:var(--oxidised-gold)]/10" : "border-[color:var(--line)] bg-black/10 hover:bg-white/[.035]"}`}><span className="block truncate text-[12px] font-medium text-[color:var(--foreground)]">{signal.name}</span><span className="mt-1 block truncate font-mono text-[8px] uppercase tracking-[.06em] text-[color:var(--muted)]">{signal.family}</span></button>)}</div><div className="mt-3 rounded-lg border border-[color:var(--line)] bg-black/15 p-4"><div className="flex items-start justify-between gap-2"><div><p className="text-[15px] font-medium">{selectedSignal.name}</p><p className="mt-1 font-mono text-[9px] uppercase tracking-[.08em] text-[color:var(--oxidised-gold)]">{selectedSignal.stage}</p></div>{claim && <span className={`shrink-0 rounded-full border px-1.5 py-0.5 font-mono text-[8px] uppercase ${confidenceTone(claim.confidence)}`}>{claim.confidence}</span>}</div><p className="mt-3 text-[13px] leading-5 text-[color:var(--foreground)]/85">{selectedSignal.teachingRole}</p>{claim?.evidence.caveat && <p className="mt-3 border-l border-[color:var(--line)] pl-3 text-[11px] leading-5 text-[color:var(--muted)]">{claim.evidence.caveat}</p>}{source && <a href={source.url} target="_blank" rel="noreferrer" className="mt-3 flex items-center gap-1 text-[10px] text-[color:var(--limestone)] hover:underline">{source.publisher}<ArrowUpRight size={10} /></a>}</div></div>;
+  return <div className="mt-5"><div className="flex items-center justify-between gap-2"><p className="font-mono text-[10px] uppercase tracking-[.18em] text-[color:var(--oxidised-gold)]">{layer === "chemistry" ? "Volatile + precursor library" : "Pigment + tannin architecture"}</p><span className="font-mono text-[9px] text-[color:var(--muted)]">{signals.length} signals</span></div><div className="mt-3 grid grid-cols-2 gap-2">{signals.map((signal) => <button key={signal.id} onClick={() => setSelectedSignalId(signal.id)} className={`min-w-0 rounded-md border px-3 py-2 text-left transition ${signal.id === selectedSignal.id ? "border-[color:var(--oxidised-gold)]/60 bg-[color:var(--oxidised-gold)]/10" : "border-[color:var(--line)] bg-black/10 hover:bg-white/[.035]"}`}><span className="block truncate text-[12px] font-medium text-[color:var(--foreground)]">{signal.name}</span><span className="mt-1 block truncate font-mono text-[8px] uppercase tracking-[.06em] text-[color:var(--muted)]"><TechnicalLabel label={signal.family} /></span></button>)}</div><div className="mt-3 rounded-lg border border-[color:var(--line)] bg-black/15 p-4"><div className="flex items-start justify-between gap-2"><div><p className="text-[15px] font-medium">{selectedSignal.name}</p><p className="mt-1 font-mono text-[9px] uppercase tracking-[.08em] text-[color:var(--oxidised-gold)]"><TechnicalLabel label={selectedSignal.stage} /></p></div>{claim && <span className={`shrink-0 rounded-full border px-1.5 py-0.5 font-mono text-[8px] uppercase ${confidenceTone(claim.confidence)}`}>{claim.confidence}</span>}</div><p className="mt-3 text-[13px] leading-5 text-[color:var(--foreground)]/85">{selectedSignal.teachingRole}</p>{claim?.evidence.caveat && <p className="mt-3 border-l border-[color:var(--line)] pl-3 text-[11px] leading-5 text-[color:var(--muted)]">{claim.evidence.caveat}</p>}{source && <a href={source.url} target="_blank" rel="noreferrer" className="mt-3 flex items-center gap-1 text-[10px] text-[color:var(--limestone)] hover:underline">{source.publisher}<ArrowUpRight size={10} /></a>}</div></div>;
+}
+
+function TechnicalLabel({ label }: { label: string }) {
+  const matchingTerm = Object.keys(glossary).find((term) => label.toLowerCase().includes(term.toLowerCase()));
+  return matchingTerm ? <GlossaryTerm term={matchingTerm}>{label}</GlossaryTerm> : <>{label}</>;
 }
 
 function Evidence({ claims, sources }: { claims: Claim[]; sources: Source[] }) {

@@ -57,6 +57,17 @@ export const sources = [
     language: "en",
   },
   {
+    id: "chianti-classico-panzano-uga",
+    title: "Panzano UGA",
+    publisher: "Consorzio Vino Chianti Classico",
+    url: "https://www.chianticlassico.com/territorio/uga/panzano/",
+    sourceType: "official_institutional",
+    publishedAt: null,
+    effectiveAt: null,
+    retrievedAt: "2026-07-18",
+    language: "it",
+  },
+  {
     id: "casassa-sangiovese-quality-2020",
     title: "Evaluation of the Intrinsic and Perceived Quality of Sangiovese Wines from California and Italy",
     publisher: "Foods",
