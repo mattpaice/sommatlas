@@ -43,9 +43,9 @@ WGS84 longitude/latitude and a named locality to `src/data/regions.ts` or
 Mercator transform used to generate each Natural Earth country SVG. This keeps
 locations stable across viewport sizes and avoids hand-tuned percentages.
 
-Context labels are shown one family at a time. Their lanes are sorted in the
-same north-to-south order as their markers, so leader lines cannot cross; the
-shared France-side rail also stays clear of Italy's interactive region labels.
+The map stays deliberately label-free until a point is hovered or focused. A
+separate appellation index supports name-first navigation without placing
+persistent controls or callout lines over the geography.
 
 ## Evidence principles
 

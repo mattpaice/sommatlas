@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { MessageResponse } from "@/components/ai-elements/message";
 import { demoFallbacks } from "@/data/demo-fallback";
-import { mapContextPoints, type MapContextGroup, type MapContextPoint } from "@/data/map-context";
+import { mapContextPoints, type MapContextPoint } from "@/data/map-context";
 import { baroloMolecularSignals, type MolecularLayer } from "@/data/molecular-signals";
 import { projectCountryPoint, type MapCountry } from "@/lib/map-projection";
 import type { Challenge, Claim, Region, RegionId, Source } from "@/lib/schemas";
@@ -50,12 +50,6 @@ type ThemeId = (typeof themes)[number]["id"];
 
 const countryLabel = { IT: "Italy", FR: "France" } as const;
 
-const contextGroups = [
-  { id: "burgundy", label: "Burgundy" },
-  { id: "bordeaux", label: "Bordeaux" },
-  { id: "rhone", label: "Rhône" },
-] as const satisfies readonly { id: MapContextGroup; label: string }[];
-
 function confidenceTone(confidence: Claim["confidence"]) {
   return confidence === "high"
     ? "border-[color:var(--sage)]/40 bg-[color:var(--sage)]/10 text-[color:var(--sage)]"
@@ -85,7 +79,8 @@ export function AtlasExperience({ regions, claims, sources, challenges }: AtlasE
   const [activeLayer, setActiveLayer] = useState<LayerId>("geology");
   const [theme, setTheme] = useState<ThemeId>("harvest");
   const [selectedId, setSelectedId] = useState<RegionId>("barolo");
-  const [contextGroup, setContextGroup] = useState<MapContextGroup>("burgundy");
+  const [focusedContextId, setFocusedContextId] = useState<MapContextPoint["id"] | null>(null);
+  const [activeMapTooltipId, setActiveMapTooltipId] = useState<string | null>(null);
   const [comparisonOpen, setComparisonOpen] = useState(false);
   const [challengeAnswer, setChallengeAnswer] = useState<boolean | null>(null);
   const [mode, setMode] = useState<"sol" | "terra">("sol");
@@ -128,6 +123,20 @@ export function AtlasExperience({ regions, claims, sources, challenges }: AtlasE
     ? demoFallbacks.find((fallback) => fallback.id === (mode === "sol" ? "compare-barolo-chianti" : "explain-anthocyanins"))?.answer
     : undefined;
   const isGenerating = status === "submitted" || status === "streaming";
+  const mapIndexValue = focusedContextId ? `context:${focusedContextId}` : `study:${selected.id}`;
+
+  function navigateMapIndex(value: string) {
+    const [kind, id] = value.split(":");
+    if (kind === "study") {
+      setSelectedId(id as RegionId);
+      setFocusedContextId(null);
+      setActiveMapTooltipId(null);
+      setChallengeAnswer(null);
+      return;
+    }
+    setFocusedContextId(id as MapContextPoint["id"]);
+    setActiveMapTooltipId(null);
+  }
 
   return (
     <main data-theme={theme} className="atlas-shell min-h-screen overflow-hidden bg-[color:var(--background)] text-[color:var(--foreground)]">
@@ -196,19 +205,20 @@ export function AtlasExperience({ regions, claims, sources, challenges }: AtlasE
             <button onClick={() => setComparisonOpen((open) => !open)} className="flex items-center gap-2 rounded-full border border-[color:var(--line)] bg-black/10 px-3 py-2 text-xs transition hover:bg-white/5"><Scale size={14} className="text-[color:var(--oxidised-gold)]" /> Barolo / Chianti</button>
           </div>
 
-          <div className="relative mt-4 flex justify-center">
-            <div className="z-30 flex rounded-lg border border-[color:var(--line)] bg-[color:var(--panel)]/85 p-1 shadow-lg backdrop-blur" aria-label="French context anchors">
-              {contextGroups.map((group) => (
-                <button key={group.id} aria-pressed={contextGroup === group.id} onClick={() => setContextGroup(group.id)} className={`rounded-md px-3 py-1.5 font-mono text-[9px] uppercase tracking-[.12em] transition ${contextGroup === group.id ? "bg-[color:var(--foreground)] text-[color:var(--background)]" : "text-[color:var(--muted)] hover:bg-white/[.06] hover:text-[color:var(--foreground)]"}`}>{group.label}</button>
-              ))}
-            </div>
+          <div className="relative mx-auto mt-1 h-[450px] max-w-3xl">
+            <CountryMap country="FR" className="left-[7%] top-[6%] w-[44%] aspect-square" maskClassName="bg-[color:var(--limestone)] opacity-20 [mask:url('/maps/france.svg')_center/100%_100%_no-repeat]" labelClassName="left-[25%] top-[17%] text-[color:var(--limestone)]/70" regions={regions} selectedId={selected.id} activeColour={active.colour} visibleTooltipId={activeMapTooltipId ?? (focusedContextId ? `context:${focusedContextId}` : null)} onTooltipChange={setActiveMapTooltipId} focusedContextId={focusedContextId} onContextFocus={setFocusedContextId} onSelect={(regionId) => { setSelectedId(regionId); setFocusedContextId(null); setActiveMapTooltipId(null); setChallengeAnswer(null); }} />
+            <CountryMap country="IT" className="right-[7%] top-[1%] h-[94%] aspect-[500/620]" maskClassName="bg-[color:var(--ponca)] opacity-25 [mask:url('/maps/italy.svg')_center/100%_100%_no-repeat]" labelClassName="right-[8%] top-[16%] text-[color:var(--ponca)]/70" regions={regions} selectedId={selected.id} activeColour={active.colour} visibleTooltipId={activeMapTooltipId ?? (focusedContextId ? `context:${focusedContextId}` : null)} onTooltipChange={setActiveMapTooltipId} focusedContextId={focusedContextId} onContextFocus={setFocusedContextId} onSelect={(regionId) => { setSelectedId(regionId); setFocusedContextId(null); setActiveMapTooltipId(null); setChallengeAnswer(null); }} />
           </div>
-
-          <div className="relative mx-auto -mt-2 h-[430px] max-w-3xl">
-            <CountryMap country="FR" className="left-[7%] top-[6%] w-[44%] aspect-square" maskClassName="bg-[color:var(--limestone)] opacity-20 [mask:url('/maps/france.svg')_center/100%_100%_no-repeat]" labelClassName="left-[25%] top-[17%] text-[color:var(--limestone)]/70" regions={regions} selectedId={selected.id} activeColour={active.colour} contextGroup={contextGroup} onSelect={(regionId) => { setSelectedId(regionId); setChallengeAnswer(null); }} />
-            <CountryMap country="IT" className="right-[7%] top-[1%] h-[94%] aspect-[500/620]" maskClassName="bg-[color:var(--ponca)] opacity-25 [mask:url('/maps/italy.svg')_center/100%_100%_no-repeat]" labelClassName="right-[8%] top-[16%] text-[color:var(--ponca)]/70" regions={regions} selectedId={selected.id} activeColour={active.colour} contextGroup={contextGroup} onSelect={(regionId) => { setSelectedId(regionId); setChallengeAnswer(null); }} />
+          <div className="relative mt-auto flex flex-col gap-3 border-t border-[color:var(--line)] pt-3 sm:flex-row sm:items-center sm:justify-between">
+            <label className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-[.14em] text-[color:var(--muted)]">
+              Appellation index
+              <select aria-label="Find an appellation on the map" value={mapIndexValue} onChange={(event) => navigateMapIndex(event.target.value)} className="max-w-[220px] rounded-md border border-[color:var(--line)] bg-[color:var(--panel)] px-2 py-1.5 font-sans text-xs normal-case tracking-normal text-[color:var(--foreground)] outline-none focus:border-[color:var(--oxidised-gold)]">
+                <optgroup label="Featured studies">{regions.map((region) => <option key={region.id} value={`study:${region.id}`}>{region.name}</option>)}</optgroup>
+                <optgroup label="Context appellations">{mapContextPoints.map((point) => <option key={point.id} value={`context:${point.id}`}>{point.label}</option>)}</optgroup>
+              </select>
+            </label>
+            <span className="text-[10px] text-[color:var(--muted)]">Hover or focus a dot to identify it · representative points</span>
           </div>
-          <div className="relative mt-auto flex items-center justify-between border-t border-[color:var(--line)] pt-4 text-[11px] text-[color:var(--muted)]"><span>Four studies · seven context anchors · {active.label.toLowerCase()}</span><span>Geographic outlines · representative points</span></div>
         </section>
 
         <aside className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--panel)] p-5 md:p-6 xl:row-span-2">
@@ -260,88 +270,54 @@ type CountryMapProps = {
   regions: Region[];
   selectedId: RegionId;
   activeColour: string;
-  contextGroup: MapContextGroup;
+  visibleTooltipId: string | null;
+  onTooltipChange: (pointId: string | null) => void;
+  focusedContextId: MapContextPoint["id"] | null;
+  onContextFocus: (pointId: MapContextPoint["id"]) => void;
   onSelect: (regionId: RegionId) => void;
 };
 
-function CountryMap({ country, className, maskClassName, labelClassName, regions, selectedId, activeColour, contextGroup, onSelect }: CountryMapProps) {
+function CountryMap({ country, className, maskClassName, labelClassName, regions, selectedId, activeColour, visibleTooltipId, onTooltipChange, focusedContextId, onContextFocus, onSelect }: CountryMapProps) {
   const countryRegions = regions.filter((region) => region.country === country);
 
   return (
     <div className={`absolute overflow-visible ${className}`}>
       <div aria-hidden className={`absolute inset-0 ${maskClassName}`} />
       <div className={`pointer-events-none absolute font-mono text-[10px] tracking-[.24em] ${labelClassName}`}>{country === "FR" ? "FRANCE" : "ITALY"}</div>
-      {country === "FR" && <ContextCallouts activeGroup={contextGroup} />}
+      {country === "FR" && <ContextDots focusedId={focusedContextId} visibleTooltipId={visibleTooltipId} onTooltipChange={onTooltipChange} onFocus={onContextFocus} />}
       {countryRegions.map((region) => (
-        <Hotspot key={region.id} region={region} active={selectedId === region.id} colour={activeColour} onSelect={() => onSelect(region.id)} />
+        <Hotspot key={region.id} region={region} active={selectedId === region.id} colour={activeColour} tooltipVisible={visibleTooltipId === `study:${region.id}`} onTooltipChange={onTooltipChange} onSelect={() => onSelect(region.id)} />
       ))}
     </div>
   );
 }
 
-function Hotspot({ region, active, colour, onSelect }: { region: Region; active: boolean; colour: string; onSelect: () => void }) {
+function Hotspot({ region, active, colour, tooltipVisible, onTooltipChange, onSelect }: { region: Region; active: boolean; colour: string; tooltipVisible: boolean; onTooltipChange: (pointId: string | null) => void; onSelect: () => void }) {
   const projected = projectCountryPoint(region.country, region.map);
   const labelOnLeft = projected.xPercent > 52;
 
   return (
-    <button aria-label={`Explore ${region.name}`} onClick={onSelect} className="group absolute z-20 -translate-x-1/2 -translate-y-1/2 text-left" style={{ left: `${projected.xPercent}%`, top: `${projected.yPercent}%` }}>
+    <button aria-label={`Explore ${region.name}`} onPointerEnter={() => onTooltipChange(`study:${region.id}`)} onPointerLeave={() => onTooltipChange(null)} onFocus={() => onTooltipChange(`study:${region.id}`)} onBlur={() => onTooltipChange(null)} onClick={onSelect} className="absolute z-20 -translate-x-1/2 -translate-y-1/2 text-left" style={{ left: `${projected.xPercent}%`, top: `${projected.yPercent}%` }}>
       <span className="relative flex h-5 w-5 items-center justify-center rounded-full border border-white/40 bg-[#11110f] shadow-[0_0_0_5px_rgba(17,17,15,.7)]"><span className={`h-2 w-2 rounded-full ${active ? "animate-pulse" : ""}`} style={{ backgroundColor: colour }} /></span>
-      <span aria-hidden className={`absolute top-1/2 h-px w-3 -translate-y-1/2 bg-[color:var(--limestone)]/55 ${labelOnLeft ? "right-full" : "left-full"}`} />
-      <span className={`absolute top-1/2 w-max -translate-y-1/2 rounded-md border border-[color:var(--line)] bg-[#171713]/95 px-2 py-1 font-mono text-[9px] uppercase tracking-wider shadow-lg transition ${labelOnLeft ? "right-8" : "left-8"} ${active ? "opacity-100" : "opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100"}`}>{region.name}</span>
+      <span className={`pointer-events-none absolute top-1/2 w-max -translate-y-1/2 rounded-md border border-[color:var(--line)] bg-[#171713]/95 px-2 py-1 font-mono text-[9px] uppercase tracking-wider shadow-lg transition ${labelOnLeft ? "right-7" : "left-7"} ${tooltipVisible ? "opacity-100" : "opacity-0"}`}>{region.name}</span>
     </button>
   );
 }
 
-type ContextCallout = {
-  point: MapContextPoint;
-  x: number;
-  y: number;
-  laneY: number;
-};
-
-function buildContextCallouts(activeGroup: MapContextGroup): ContextCallout[] {
-  const projected = mapContextPoints
-    .filter((point) => point.group === activeGroup)
-    .map((point) => {
-      const position = projectCountryPoint(point.country, point.anchor);
-      return { point, x: position.xPercent, y: position.yPercent, laneY: position.yPercent };
-    })
-    .sort((a, b) => a.y - b.y);
-
-  const minimumGap = 9;
-  const minimumY = 11;
-  const maximumY = 89;
-  projected.forEach((callout, index) => {
-    callout.laneY = Math.max(callout.y, index === 0 ? minimumY : projected[index - 1].laneY + minimumGap);
-  });
-  const overflow = Math.max(0, (projected.at(-1)?.laneY ?? maximumY) - maximumY);
-  projected.forEach((callout) => { callout.laneY -= overflow; });
-  return projected;
-}
-
-function ContextCallouts({ activeGroup }: { activeGroup: MapContextGroup }) {
-  const activeCallouts = buildContextCallouts(activeGroup);
-  // Keep descriptors on the France-facing rail, away from Italy's interactive
-  // hero labels. Matching the label order to the marker order prevents crossings.
-  const railX = 3;
-
+function ContextDots({ focusedId, visibleTooltipId, onTooltipChange, onFocus }: { focusedId: MapContextPoint["id"] | null; visibleTooltipId: string | null; onTooltipChange: (pointId: string | null) => void; onFocus: (pointId: MapContextPoint["id"]) => void }) {
   return (
     <>
       {mapContextPoints.map((point) => {
         const position = projectCountryPoint(point.country, point.anchor);
-        const isActive = point.group === activeGroup;
-        return <span key={point.id} aria-hidden className={`absolute z-[5] block -translate-x-1/2 -translate-y-1/2 rounded-full border bg-[color:var(--background)] transition ${isActive ? "h-2.5 w-2.5 border-[color:var(--limestone)] shadow-[0_0_0_3px_rgba(216,200,170,.12)]" : "h-1.5 w-1.5 border-[color:var(--limestone)]/30 opacity-35"}`} style={{ left: `${position.xPercent}%`, top: `${position.yPercent}%` }} />;
+        const labelOnLeft = position.xPercent > 58;
+        const isFocused = focusedId === point.id;
+        return (
+          <button key={point.id} aria-label={`Locate ${point.label}`} onPointerEnter={() => onTooltipChange(`context:${point.id}`)} onPointerLeave={() => onTooltipChange(null)} onFocus={() => onTooltipChange(`context:${point.id}`)} onBlur={() => onTooltipChange(null)} onClick={() => onFocus(point.id)} className="absolute z-10 -translate-x-1/2 -translate-y-1/2" style={{ left: `${position.xPercent}%`, top: `${position.yPercent}%` }}>
+            <span className={`block rounded-full border bg-[color:var(--background)] transition ${isFocused ? "h-3 w-3 border-[color:var(--oxidised-gold)] shadow-[0_0_0_4px_rgba(224,174,72,.14)]" : "h-2.5 w-2.5 border-[color:var(--limestone)]/70 shadow-[0_0_0_3px_rgba(216,200,170,.08)]"}`} />
+            <span className={`pointer-events-none absolute top-1/2 w-max -translate-y-1/2 rounded-md border border-[color:var(--line)] bg-[#171713]/95 px-2 py-1 font-mono text-[8px] uppercase tracking-[.08em] text-[color:var(--foreground)] shadow-lg transition ${labelOnLeft ? "right-5" : "left-5"} ${visibleTooltipId === `context:${point.id}` ? "opacity-100" : "opacity-0"}`}>{point.label}</span>
+          </button>
+        );
       })}
-      <svg aria-hidden className="pointer-events-none absolute inset-0 z-[6] h-full w-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
-        {activeCallouts.map(({ point, x, y, laneY }) => (
-          <path key={point.id} d={`M ${x} ${y} L ${railX} ${laneY}`} fill="none" stroke="var(--limestone)" strokeOpacity="0.58" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-        ))}
-      </svg>
-      {activeCallouts.map(({ point, laneY }) => (
-        <div key={point.id} className="pointer-events-none absolute left-[3%] z-10 flex -translate-y-1/2 items-center" style={{ top: `${laneY}%` }}>
-          <span className="rounded border border-[color:var(--line)] bg-[#171713]/95 px-2 py-1 font-mono text-[8px] uppercase tracking-[.08em] text-[color:var(--foreground)] shadow-lg">{point.label}</span>
-        </div>
-      ))}
     </>
   );
 }
