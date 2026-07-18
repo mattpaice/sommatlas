@@ -10,7 +10,8 @@ training product after the event.
 
 - One desktop-first page with a responsive fallback.
 - Next.js 16 App Router, TypeScript, Tailwind, and Vercel.
-- Plain local SVG maps with hand-positioned region hotspots; no GIS or map API.
+- Local Natural Earth SVG boundaries with hand-positioned study and contextual
+  wine-region hotspots; no runtime GIS or map API.
 - Four deep profiles: Barolo, Chianti Classico, Jura, and Collio.
 - Barolo versus Chianti Classico is the flagship comparison.
 - Static, version-controlled evidence corpus validated with Zod.

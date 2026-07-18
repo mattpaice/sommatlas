@@ -30,6 +30,11 @@ and GPT-5.6 Terra for fast teaching explanations. Both are bounded by tools
 that expose only the local verified corpus; deterministic answers preserve the
 demo if model access is unavailable.
 
+The atlas uses Natural Earth country boundaries and includes context-only
+anchors for Burgundy, Bordeaux and the Rhône. Barolo's chemistry and phenolics
+layers expose an interactive, primary-research-backed molecular fingerprint:
+named aroma precursors, volatiles, anthocyanins and proanthocyanidin units.
+
 ## Evidence principles
 
 - Never imply that soil directly creates an aroma compound.

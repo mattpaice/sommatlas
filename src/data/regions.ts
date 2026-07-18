@@ -13,8 +13,8 @@ export const regions = [
     map: { countryX: 69, countryY: 30 },
     layerHighlights: {
       geology: "Formation is only the first layer: soil evolution, slope, elevation, exposure and microclimate complicate every MGA shortcut.",
-      chemistry: "Nebbiolo's colour depends on a relatively small and reactive anthocyanin pool.",
-      phenolics: "Low pigment does not mean low tannin; treat their ratio as a structural clue.",
+      chemistry: "Track glycosidic C13-norisoprenoid precursors (3-hydroxy-beta-damascone, 3-oxo-alpha-ionol, blumenol C, vomifoliol), finished-wine linalool and geraniol, then ageing aldehydes such as acetaldehyde and methional—without equating any one molecule to a tasting note.",
+      phenolics: "Peonidin-3-O-glucoside and malvidin-3-O-glucoside lead one measured low-pigment profile; proanthocyanidins are chains of catechin, epicatechin, epicatechin gallate and skin epigallocatechin units. Low colour does not mean low tannin.",
       palate: "Aromatic lift, high acidity and drying tannin are the teaching archetype.",
       rules: "100% Nebbiolo; 38 months ageing with at least 18 in wood.",
     },
@@ -27,6 +27,12 @@ export const regions = [
       "barolo-site-before-style",
       "nebbiolo-pigment-tannin-pattern",
       "nebbiolo-anthocyanin-profile",
+      "nebbiolo-norisoprenoid-precursors",
+      "nebbiolo-terpenoid-wine-profile",
+      "nebbiolo-aroma-not-one-to-one",
+      "nebbiolo-named-anthocyanins",
+      "nebbiolo-proanthocyanidin-building-blocks",
+      "nebbiolo-oxygen-ageing-network",
     ],
     archetype: {
       name: "Young traditional-leaning Barolo",

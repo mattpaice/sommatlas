@@ -46,6 +46,82 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --brand-primary: #dc6d55;
+  --brand-secondary: #e0ae48;
+  --brand-tertiary: #98aa6f;
+  --header-bg: #25161f;
+  --mark-bg: rgba(25, 12, 20, 0.72);
+  --theme-control: rgba(220, 109, 85, 0.16);
+  --nav-active: rgba(220, 109, 85, 0.1);
+  --nav-active-border: rgba(220, 109, 85, 0.28);
+  --line-strong: rgba(242, 234, 219, 0.22);
+  --wash-one: rgba(220, 109, 85, 0.24);
+  --wash-two: rgba(224, 174, 72, 0.14);
+  --map-background: radial-gradient(ellipse at 52% 35%, #36202a 0%, #1b171a 46%, #11110f 78%);
+}
+
+[data-theme="harvest"] {
+  --panel: #1d181a;
+  --panel-soft: #271d21;
+  --line: rgba(255, 235, 217, 0.14);
+  --muted: #b9a9a1;
+  --limestone: #ead5b9;
+  --ponca: #dc7659;
+  --garnet: #dc6d78;
+  --oxidised-gold: #e0ae48;
+  --sage: #98aa6f;
+  --background: #120f11;
+  --foreground: #fff2e3;
+}
+
+[data-theme="cellar"] {
+  --panel: #1b1815;
+  --panel-soft: #25201b;
+  --line: rgba(246, 230, 207, 0.14);
+  --muted: #afa297;
+  --limestone: #e3cfb2;
+  --ponca: #c57b48;
+  --garnet: #ad4058;
+  --oxidised-gold: #d09b55;
+  --sage: #8c9a70;
+  --background: #100e0d;
+  --foreground: #f6e6cf;
+  --brand-primary: #ad4058;
+  --brand-secondary: #c57b48;
+  --brand-tertiary: #8c9a70;
+  --header-bg: #201414;
+  --mark-bg: rgba(30, 15, 15, 0.76);
+  --theme-control: rgba(173, 64, 88, 0.17);
+  --nav-active: rgba(173, 64, 88, 0.11);
+  --nav-active-border: rgba(197, 123, 72, 0.3);
+  --wash-one: rgba(173, 64, 88, 0.2);
+  --wash-two: rgba(197, 123, 72, 0.13);
+  --map-background: radial-gradient(ellipse at 52% 35%, #30211c 0%, #191614 46%, #100e0d 78%);
+}
+
+[data-theme="atlas"] {
+  --panel: #131d20;
+  --panel-soft: #1a282b;
+  --line: rgba(221, 240, 233, 0.14);
+  --muted: #9fb3b0;
+  --limestone: #d8d3b7;
+  --ponca: #e27d58;
+  --garnet: #d85f69;
+  --oxidised-gold: #d9b85f;
+  --sage: #68aaa0;
+  --background: #0b1214;
+  --foreground: #eaf3ed;
+  --brand-primary: #3ea8a0;
+  --brand-secondary: #e27d58;
+  --brand-tertiary: #d9b85f;
+  --header-bg: #0e2024;
+  --mark-bg: rgba(7, 24, 28, 0.78);
+  --theme-control: rgba(62, 168, 160, 0.16);
+  --nav-active: rgba(62, 168, 160, 0.1);
+  --nav-active-border: rgba(62, 168, 160, 0.28);
+  --wash-one: rgba(62, 168, 160, 0.2);
+  --wash-two: rgba(226, 125, 88, 0.13);
+  --map-background: radial-gradient(ellipse at 52% 35%, #173137 0%, #111d20 46%, #0b1214 78%);
 }
 
 @theme inline {
@@ -103,6 +179,17 @@ html {
 body {
   min-height: 100vh;
   font-family: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
+}
+
+.atlas-shell {
+  transition: background-color 240ms ease, color 240ms ease;
+}
+
+.atlas-shell header,
+.atlas-shell section,
+.atlas-shell aside,
+.atlas-shell nav button {
+  transition: background-color 240ms ease, border-color 240ms ease, color 180ms ease;
 }
 
 button,

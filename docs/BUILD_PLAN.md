@@ -70,6 +70,8 @@ time allows. Breadth is a post-hackathon task.
 ### 1. Atlas
 
 - Stylised France/Italy map with region hotspots.
+- Geographic Natural Earth outlines plus context-only anchors for Côte de Nuits,
+  Côte de Beaune, Beaujolais, both Bordeaux banks and both Rhône sectors.
 - Layer control: chemistry, geology, phenolics, palate, and legal rules.
 - A deliberate editorial visual language rather than a generic dashboard.
 
@@ -84,6 +86,8 @@ time allows. Breadth is a post-hackathon task.
 - Principal grapes and wine archetypes.
 - Aroma compound families with evidence strength.
 - Palate and phenolic fingerprints.
+- A named Nebbiolo molecular fingerprint spanning aroma precursors, finished-wine
+  volatiles, anthocyanin pigments and proanthocyanidin building blocks.
 - High-value appellation rules linked to their official source.
 
 ### 3. Compare: Barolo versus Chianti Classico
