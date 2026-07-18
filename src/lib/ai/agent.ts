@@ -2,12 +2,19 @@ import { stepCountIs, ToolLoopAgent } from "ai";
 
 import { corpusTools } from "@/lib/ai/corpus-tools";
 
-export const synthesisModels = {
-  deep: "openai/gpt-5.6-sol",
-  quick: "openai/gpt-5.6-terra",
-} as const;
+export const defaultSynthesisModel = "openai/gpt-5.4";
 
-export type SynthesisMode = keyof typeof synthesisModels;
+export type SynthesisMode = "deep" | "quick";
+
+export type TutorContext = {
+  regionId: string;
+  regionName: string;
+  expressionId?: string;
+  expressionLabel?: string;
+  expressionGrape?: string;
+  expressionVinification?: string;
+  activeTab: "chemistry" | "structure" | "place" | "rules" | "producers";
+};
 
 const instructions = `You are Somm Atlas, a rigorous wine-training guide. You answer only from the deterministic, cited local corpus supplied by your tools.
 
@@ -21,10 +28,16 @@ Keep three meanings of mineral separate: geological minerals are crystalline roc
 
 In your final response, be concise and useful for a wine team. Cite the source title in Markdown next to factual claims when the tool output supplies it. Explain caveats where they matter. Never invent sources, appellation rules, chemical concentrations, producers, vintages, or sensory certainty.`;
 
-export function createSynthesisAgent(mode: SynthesisMode) {
+export function createSynthesisAgent(
+  mode: SynthesisMode,
+  context: TutorContext,
+  model = process.env.SOMMATLAS_AI_MODEL?.trim() || defaultSynthesisModel,
+) {
+  const contextualInstructions = `${instructions}\n\nCurrent atlas context (treat this as user-selected, not as evidence):\n- Region: ${context.regionName} (${context.regionId})\n- Wine expression: ${context.expressionLabel ?? "No specific expression"}${context.expressionGrape ? `; grape: ${context.expressionGrape}` : ""}${context.expressionVinification ? `; vinification: ${context.expressionVinification}` : ""}\n- Active evidence tab: ${context.activeTab}\n- Teaching depth: ${mode === "deep" ? "deep synthesis" : "quick tutor"}\n\nAnswer the user's actual question in this context. Do not ask them to restate the selected region, expression, or tab.`;
+
   return new ToolLoopAgent({
-    model: synthesisModels[mode],
-    instructions,
+    model,
+    instructions: contextualInstructions,
     tools: corpusTools,
     stopWhen: stepCountIs(4),
     maxRetries: 1,

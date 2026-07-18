@@ -91,8 +91,11 @@ export function projectCountryPoint(
   const latitudeRadians = safeLatitude * degreesToRadians;
   const mercatorY = Math.log(Math.tan((Math.PI / 2 + latitudeRadians) / 2));
 
-  const x = metadata.mercator.translateX + metadata.mercator.scale * longitudeRadians;
-  const y = metadata.mercator.translateY - metadata.mercator.scale * mercatorY;
+  // V8 can serialize the final few binary floating-point digits differently
+  // between the Node and browser runtimes. SVG attributes are hydration-
+  // sensitive, so normalize local coordinates before rendering them.
+  const x = Number((metadata.mercator.translateX + metadata.mercator.scale * longitudeRadians).toFixed(4));
+  const y = Number((metadata.mercator.translateY - metadata.mercator.scale * mercatorY).toFixed(4));
   // CSSOM serializes percentage values at limited precision. Explicitly
   // matching that precision keeps server and client style strings identical.
   const xPercent = Number(((x / metadata.viewBox.width) * 100).toFixed(4));

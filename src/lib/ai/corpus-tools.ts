@@ -2,6 +2,11 @@ import { tool } from "ai";
 import { z } from "zod";
 
 import {
+  contextRegionProfileById,
+  contextRegionSources,
+  type ContextRegionId,
+} from "@/data/context-region-profiles";
+import {
   corpus,
   getClaimsForRegion,
   getRegion,
@@ -14,6 +19,30 @@ const regionInputSchema = z
     regionId: RegionIdSchema.describe("The curated region to investigate."),
   })
   .strict();
+
+const contextRegionInputSchema = z
+  .object({
+    regionId: z.enum([
+      "cote-de-nuits",
+      "cote-de-beaune",
+      "beaujolais",
+      "bordeaux-left-bank",
+      "bordeaux-right-bank",
+      "northern-rhone",
+      "southern-rhone",
+    ]),
+  })
+  .strict();
+
+function contextProfile(regionId: ContextRegionId) {
+  const profile = contextRegionProfileById[regionId];
+  const sourceIds = new Set(profile.sourceIds);
+  return {
+    kind: "context_region_profile" as const,
+    profile,
+    sources: contextRegionSources.filter((source) => sourceIds.has(source.id)),
+  };
+}
 
 type EvidenceClaim = Pick<
   Claim,
@@ -84,6 +113,14 @@ function regionSummary(regionId: RegionId) {
 }
 
 export const corpusTools = {
+  get_context_region_profile: tool({
+    description:
+      "Retrieve the cited teaching profile for Côte de Nuits, Côte de Beaune, Beaujolais, Bordeaux Left/Right Bank, or Northern/Southern Rhône. Use this instead of curated-region tools for these context-only atlas points.",
+    inputSchema: contextRegionInputSchema,
+    strict: true,
+    execute: async ({ regionId }) => contextProfile(regionId),
+  }),
+
   get_appellation_rules: tool({
     description:
       "Retrieve verified legal/appellation rules. Use for permitted grapes, named areas, yields, ageing, labelling, and designation eligibility.",

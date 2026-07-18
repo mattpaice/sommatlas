@@ -2,8 +2,9 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
 import {
+  AlertTriangle,
   ArrowUpRight,
   Atom,
   BookOpen,
@@ -12,15 +13,17 @@ import {
   Palette,
   PanelLeftClose,
   PanelLeftOpen,
+  RefreshCw,
+  RotateCcw,
   Scale,
+  Send,
   ShieldCheck,
   Sparkles,
   Users,
   Wine,
 } from "lucide-react";
-import { MessageResponse } from "@/components/ai-elements/message";
+import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
 import { chiantiClassicoComplementaryRedGrapes } from "@/data/appellation-rules";
-import { demoFallbacks } from "@/data/demo-fallback";
 import { mapContextPoints, type MapContextPoint } from "@/data/map-context";
 import { mapTerrainFeatures, terrainLegend, type TerrainKind } from "@/data/map-terrain";
 import { baroloMolecularSignals, chiantiMolecularSignals, type MolecularLayer, type MolecularSignal } from "@/data/molecular-signals";
@@ -66,6 +69,11 @@ const themes = [
 
 type ThemeId = (typeof themes)[number]["id"];
 
+type TutorMessageMetadata = {
+  delivery?: "live" | "local-fallback";
+  fallbackReason?: string;
+};
+
 const countryLabel = { IT: "Italy", FR: "France" } as const;
 const chiantiClassicoGranSelezioneGrapes = ["Colorino", "Canaiolo", "Ciliegiolo", "Mammolo", "Pugnitello", "Malvasia Nera", "Foglia Tonda", "Sanforte"] as const;
 
@@ -106,11 +114,20 @@ export function AtlasExperience({ regions, claims, sources, challenges }: AtlasE
   const [mapCollapsed, setMapCollapsed] = useState(false);
   const [challengeAnswer, setChallengeAnswer] = useState<boolean | null>(null);
   const [mode, setMode] = useState<"sol" | "terra">("sol");
+  const [composer, setComposer] = useState("");
   const transport = useMemo(
     () => new DefaultChatTransport({ api: `/api/synthesis/${mode === "sol" ? "deep" : "quick"}` }),
     [mode],
   );
-  const { messages, sendMessage, status, error } = useChat({ transport });
+  const {
+    messages,
+    sendMessage,
+    regenerate,
+    status,
+    error,
+    clearError,
+    setMessages,
+  } = useChat({ transport });
 
   const selected = regions.find((region) => region.id === selectedId) ?? regions[0];
   const selectedClaims = useMemo(
@@ -133,20 +150,51 @@ export function AtlasExperience({ regions, claims, sources, challenges }: AtlasE
   const active = profileTabs.find((tab) => tab.id === activeTab) ?? profileTabs[0];
   const availableExpressions = wineExpressions.filter((expression) => expression.regionId === selected.id);
   const selectedExpression = availableExpressions.find((expression) => expression.id === expressionId) ?? availableExpressions[0];
-  const synthesisPrompt = mode === "sol"
-    ? `Build an evidence-bounded account of ${selected.name} as ${selectedExpression?.label ?? "the selected expression"}: separate geology, grape chemistry, vinification and legal rules.`
-    : `Explain the most useful chemical and structural distinction in ${selected.name} as ${selectedExpression?.label ?? "the selected expression"}.`;
-  const latestAnswer = [...messages]
-    .reverse()
-    .find((message) => message.role === "assistant")
-    ?.parts.filter((part) => part.type === "text")
-    .map((part) => part.text)
-    .join("");
-  const fallbackAnswer = error && selected.id === "barolo"
-    ? demoFallbacks.find((fallback) => fallback.id === (mode === "sol" ? "compare-barolo-chianti" : "explain-anthocyanins"))?.answer
-    : undefined;
   const isGenerating = status === "submitted" || status === "streaming";
   const mapIndexValue = focusedContextId ? `context:${focusedContextId}` : `study:${selected.id}`;
+  const focusedContext = focusedContextId
+    ? mapContextPoints.find((point) => point.id === focusedContextId)
+    : undefined;
+  const tutorContext = {
+    regionId: focusedContext?.id ?? selected.id,
+    regionName: focusedContext?.label ?? selected.name,
+    expressionId: focusedContext ? undefined : selectedExpression?.id,
+    expressionLabel: focusedContext ? undefined : selectedExpression?.label,
+    expressionGrape: focusedContext ? undefined : selectedExpression?.grape,
+    expressionVinification: focusedContext ? undefined : selectedExpression?.vinification,
+    activeTab,
+  };
+  const promptChips = [
+    `Compare the key grapes in ${tutorContext.regionName}`,
+    `Explain the geology of ${tutorContext.regionName}`,
+    `What should I taste in ${tutorContext.expressionLabel ?? tutorContext.regionName}?`,
+  ];
+
+  function askTutor(text: string, fallbackOnly = false) {
+    const question = text.trim();
+    if (!question || isGenerating) return;
+    clearError();
+    setComposer("");
+    void sendMessage({ text: question }, { body: { context: tutorContext, fallbackOnly } });
+  }
+
+  function submitTutor(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    askTutor(composer);
+  }
+
+  function handleComposerKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      askTutor(composer);
+    }
+  }
+
+  function resetTutor() {
+    clearError();
+    setMessages([]);
+    setComposer("");
+  }
 
   function navigateMapIndex(value: string) {
     const [kind, id] = value.split(":");
@@ -260,9 +308,64 @@ export function AtlasExperience({ regions, claims, sources, challenges }: AtlasE
         </aside>
 
         <section className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--panel)] p-5 md:p-6 xl:col-span-2">
-          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><p className="font-mono text-[10px] uppercase tracking-[.22em] text-[color:var(--oxidised-gold)]">Guided synthesis</p><h2 className="mt-1 font-serif text-2xl">Ask a better wine question.</h2></div><div className="flex rounded-lg border border-[color:var(--line)] p-1"><ModeButton active={mode === "sol"} onClick={() => setMode("sol")} label="Deep synthesis · Sol" /><ModeButton active={mode === "terra"} onClick={() => setMode("terra")} label="Quick tutor · Terra" /></div></div>
-          <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_auto]"><div className="rounded-xl border border-dashed border-[color:var(--line)] bg-black/10 p-4"><p className="text-sm leading-6 text-[color:var(--muted)]">{synthesisPrompt}</p><p className="mt-3 font-mono text-[10px] uppercase tracking-wider text-[color:var(--muted)]">Grounded in selected corpus · citations shown in result</p></div><button disabled={isGenerating} onClick={() => sendMessage({ text: synthesisPrompt })} className="flex items-center justify-center gap-2 rounded-xl bg-[color:var(--oxidised-gold)] px-5 py-3 text-sm font-semibold text-[color:var(--background)] transition hover:bg-[color:var(--limestone)] disabled:cursor-wait disabled:opacity-60"><Sparkles size={15} className={isGenerating ? "animate-pulse" : ""} /> {isGenerating ? "Tracing evidence…" : "Synthesize"}</button></div>
-          {(latestAnswer || fallbackAnswer) && <div className="mt-5 rounded-xl border border-[color:var(--line)] bg-black/15 p-4"><div className="mb-3 flex items-center justify-between gap-3"><p className="font-mono text-[10px] uppercase tracking-[.18em] text-[color:var(--sage)]">{fallbackAnswer ? "Curated fallback" : mode === "sol" ? "Sol synthesis" : "Terra tutor"}</p>{fallbackAnswer && <span className="text-[10px] text-[color:var(--muted)]">Live model unavailable</span>}</div><MessageResponse className="text-sm leading-6 text-[color:var(--foreground)]">{latestAnswer ?? fallbackAnswer ?? ""}</MessageResponse></div>}
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+            <div><p className="font-mono text-[10px] uppercase tracking-[.22em] text-[color:var(--oxidised-gold)]">Contextual wine tutor</p><h2 className="mt-1 font-serif text-2xl">Ask a better wine question.</h2></div>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex rounded-lg border border-[color:var(--line)] p-1"><ModeButton active={mode === "sol"} onClick={() => setMode("sol")} label="Deep synthesis · Sol" /><ModeButton active={mode === "terra"} onClick={() => setMode("terra")} label="Quick tutor · Terra" /></div>
+              <button type="button" onClick={resetTutor} disabled={messages.length === 0 && !error} className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--line)] px-3 py-2 text-xs text-[color:var(--muted)] transition hover:bg-white/5 hover:text-[color:var(--foreground)] disabled:opacity-40"><RotateCcw size={13} /> New conversation</button>
+            </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2 font-mono text-[9px] uppercase tracking-[.12em] text-[color:var(--muted)]">
+            <span className="rounded-full border border-[color:var(--line)] bg-black/10 px-2.5 py-1">{tutorContext.regionName}</span>
+            {tutorContext.expressionLabel && <span className="rounded-full border border-[color:var(--line)] bg-black/10 px-2.5 py-1">{tutorContext.expressionLabel}</span>}
+            <span className="rounded-full border border-[color:var(--line)] bg-black/10 px-2.5 py-1">Evidence · {activeTab}</span>
+          </div>
+
+          <div className="mt-5 max-h-[520px] space-y-5 overflow-y-auto rounded-xl border border-[color:var(--line)] bg-black/10 p-4" aria-live="polite">
+            {messages.length === 0 && !isGenerating && (
+              <div className="py-7 text-center"><Sparkles className="mx-auto text-[color:var(--oxidised-gold)]" size={22} /><p className="mt-3 text-sm text-[color:var(--muted)]">Questions automatically inherit the selected place, wine expression and evidence tab.</p></div>
+            )}
+            {messages.map((message) => {
+              const metadata = (message.metadata ?? {}) as TutorMessageMetadata;
+              const text = message.parts.filter((part) => part.type === "text").map((part) => part.text).join("");
+              const sourceParts = message.parts.filter((part) => part.type === "source-url");
+              return (
+                <Message key={message.id} from={message.role}>
+                  <div className={`mb-1 flex items-center gap-2 font-mono text-[9px] uppercase tracking-[.15em] ${message.role === "user" ? "justify-end text-[color:var(--muted)]" : "text-[color:var(--sage)]"}`}>
+                    {message.role === "user" ? "You" : metadata.delivery === "local-fallback" ? "Local corpus tutor" : mode === "sol" ? "Sol tutor" : "Terra tutor"}
+                  </div>
+                  <MessageContent className={message.role === "assistant" ? "rounded-xl border border-[color:var(--line)] bg-[color:var(--panel)]/60 p-4" : "bg-[color:var(--theme-control)]"}>
+                    {text && <MessageResponse className="text-sm leading-6 text-[color:var(--foreground)]">{text}</MessageResponse>}
+                    {metadata.fallbackReason && <p className="border-t border-[color:var(--line)] pt-2 text-[11px] leading-5 text-[color:var(--muted)]">{metadata.fallbackReason}</p>}
+                    {sourceParts.length > 0 && (
+                      <div className="mt-1 flex flex-wrap gap-2 border-t border-[color:var(--line)] pt-3">
+                        {sourceParts.map((source) => <a key={`${message.id}-${source.sourceId}`} href={source.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-full border border-[color:var(--line)] px-2.5 py-1 text-[10px] text-[color:var(--muted)] transition hover:border-[color:var(--oxidised-gold)] hover:text-[color:var(--foreground)]">{source.title ?? "Source"}<ArrowUpRight size={10} /></a>)}
+                      </div>
+                    )}
+                  </MessageContent>
+                </Message>
+              );
+            })}
+            {isGenerating && <div className="flex items-center gap-2 rounded-xl border border-dashed border-[color:var(--line)] p-4 text-sm text-[color:var(--muted)]"><RefreshCw size={14} className="animate-spin text-[color:var(--oxidised-gold)]" /> Tracing the selected context through the cited corpus…</div>}
+          </div>
+
+          {error && (
+            <div role="alert" className="mt-4 rounded-xl border border-red-400/35 bg-red-950/25 p-4">
+              <div className="flex gap-3"><AlertTriangle size={18} className="mt-0.5 shrink-0 text-red-300" /><div><p className="text-sm font-semibold text-red-100">The tutor request failed</p><p className="mt-1 text-xs leading-5 text-red-200/75">{error.message || "The response could not be loaded."}</p></div></div>
+              <div className="mt-3 flex flex-wrap gap-2 pl-7"><button type="button" onClick={() => { clearError(); void regenerate({ body: { context: tutorContext } }); }} className="rounded-lg border border-red-300/30 px-3 py-1.5 text-xs text-red-100 hover:bg-red-100/10">Retry live tutor</button><button type="button" onClick={() => { clearError(); void regenerate({ body: { context: tutorContext, fallbackOnly: true } }); }} className="rounded-lg bg-red-100 px-3 py-1.5 text-xs font-semibold text-red-950 hover:bg-white">Use local corpus</button></div>
+            </div>
+          )}
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            {promptChips.map((prompt) => <button key={prompt} type="button" onClick={() => askTutor(prompt)} disabled={isGenerating} className="rounded-full border border-[color:var(--line)] bg-black/10 px-3 py-2 text-xs text-[color:var(--muted)] transition hover:border-[color:var(--oxidised-gold)] hover:text-[color:var(--foreground)] disabled:opacity-50">{prompt}</button>)}
+          </div>
+
+          <form onSubmit={submitTutor} className="mt-3 rounded-xl border border-[color:var(--line-strong)] bg-black/15 p-2 focus-within:border-[color:var(--oxidised-gold)]">
+            <label htmlFor="wine-tutor-composer" className="sr-only">Ask the contextual wine tutor</label>
+            <textarea id="wine-tutor-composer" value={composer} onChange={(event) => setComposer(event.target.value)} onKeyDown={handleComposerKeyDown} rows={3} maxLength={1200} placeholder={`Ask about ${tutorContext.expressionLabel ?? tutorContext.regionName}…`} className="w-full resize-none bg-transparent px-2 py-2 text-sm leading-6 text-[color:var(--foreground)] outline-none placeholder:text-[color:var(--muted)]/70" />
+            <div className="flex items-center justify-between gap-3 border-t border-[color:var(--line)] px-2 pt-2"><p className="font-mono text-[9px] uppercase tracking-[.12em] text-[color:var(--muted)]">Evidence-bounded · Enter to send · Shift+Enter for a new line</p><button type="submit" disabled={!composer.trim() || isGenerating} className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-[color:var(--oxidised-gold)] px-4 py-2 text-xs font-semibold text-[color:var(--background)] transition hover:bg-[color:var(--limestone)] disabled:cursor-not-allowed disabled:opacity-45"><Send size={13} /> Ask tutor</button></div>
+          </form>
         </section>
       </div>
 
