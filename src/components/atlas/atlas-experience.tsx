@@ -10,15 +10,20 @@ import {
   CircleHelp,
   MapPinned,
   Palette,
+  PanelLeftClose,
+  PanelLeftOpen,
   Scale,
   ShieldCheck,
   Sparkles,
+  Users,
   Wine,
 } from "lucide-react";
 import { MessageResponse } from "@/components/ai-elements/message";
+import { chiantiClassicoComplementaryRedGrapes } from "@/data/appellation-rules";
 import { demoFallbacks } from "@/data/demo-fallback";
 import { mapContextPoints, type MapContextPoint } from "@/data/map-context";
-import { baroloMolecularSignals, type MolecularLayer } from "@/data/molecular-signals";
+import { baroloMolecularSignals, chiantiMolecularSignals, type MolecularLayer, type MolecularSignal } from "@/data/molecular-signals";
+import { referenceProducers } from "@/data/reference-producers";
 import { wineExpressions, type WineExpression } from "@/data/wine-expressions";
 import { projectCountryPoint, type MapCountry } from "@/lib/map-projection";
 import type { Challenge, Claim, Region, RegionId, Source } from "@/lib/schemas";
@@ -35,6 +40,7 @@ const profileTabs = [
   { id: "chemistry", label: "Chemistry", icon: Atom, colour: "var(--oxidised-gold)" },
   { id: "structure", label: "Structure", icon: Wine, colour: "var(--garnet)" },
   { id: "rules", label: "Rules", icon: ShieldCheck, colour: "var(--limestone)" },
+  { id: "producers", label: "Producers", icon: Users, colour: "var(--sage)" },
 ] as const;
 
 type ProfileTabId = (typeof profileTabs)[number]["id"];
@@ -48,6 +54,7 @@ const themes = [
 type ThemeId = (typeof themes)[number]["id"];
 
 const countryLabel = { IT: "Italy", FR: "France" } as const;
+const chiantiClassicoGranSelezioneGrapes = ["Colorino", "Canaiolo", "Ciliegiolo", "Mammolo", "Pugnitello", "Malvasia Nera", "Foglia Tonda", "Sanforte"] as const;
 
 function confidenceTone(confidence: Claim["confidence"]) {
   return confidence === "high"
@@ -58,6 +65,7 @@ function confidenceTone(confidence: Claim["confidence"]) {
 }
 
 function claimMatchesTab(claim: Claim, tab: ProfileTabId) {
+  if (tab === "producers") return false;
   if (tab === "rules") return claim.claimType === "legal";
   if (tab === "place") {
     return claim.claimType === "geology" || claim.id === "barolo-site-before-style";
@@ -82,6 +90,7 @@ export function AtlasExperience({ regions, claims, sources, challenges }: AtlasE
   const [activeMapTooltipId, setActiveMapTooltipId] = useState<string | null>(null);
   const [expressionId, setExpressionId] = useState("barolo-nebbiolo");
   const [comparisonOpen, setComparisonOpen] = useState(false);
+  const [mapCollapsed, setMapCollapsed] = useState(false);
   const [challengeAnswer, setChallengeAnswer] = useState<boolean | null>(null);
   const [mode, setMode] = useState<"sol" | "terra">("sol");
   const transport = useMemo(
@@ -136,10 +145,12 @@ export function AtlasExperience({ regions, claims, sources, challenges }: AtlasE
       setFocusedContextId(null);
       setActiveMapTooltipId(null);
       setChallengeAnswer(null);
+      setMapCollapsed(true);
       return;
     }
     setFocusedContextId(id as MapContextPoint["id"]);
     setActiveMapTooltipId(null);
+    setMapCollapsed(false);
   }
 
   function selectRegion(regionId: RegionId) {
@@ -149,6 +160,7 @@ export function AtlasExperience({ regions, claims, sources, challenges }: AtlasE
     setFocusedContextId(null);
     setActiveMapTooltipId(null);
     setChallengeAnswer(null);
+    setMapCollapsed(true);
   }
 
   return (
@@ -161,16 +173,10 @@ export function AtlasExperience({ regions, claims, sources, challenges }: AtlasE
         </div>
         <div className="relative mx-auto flex max-w-[1500px] flex-col gap-5 px-5 py-5 md:px-8 lg:flex-row lg:items-center lg:justify-between lg:py-6">
           <div className="wordmark-lockup min-w-[250px] py-1">
-            <div className="flex items-center gap-3">
-              <span className="font-mono text-[8px] uppercase tracking-[.3em] text-[color:var(--brand-secondary)]">The interactive wine atlas</span>
-              <span className="h-px min-w-6 flex-1 bg-[color:var(--line-strong)]" aria-hidden />
-            </div>
-            <p className="font-wordmark -mb-1 mt-[-2px] text-[3.45rem] leading-none text-[color:var(--foreground)] drop-shadow-[0_8px_18px_var(--brand-primary)] md:text-[4.15rem]">SommAtlas</p>
-            <div className="flex items-center gap-3">
-              <span className="h-px flex-1 bg-[linear-gradient(90deg,var(--brand-primary),var(--brand-secondary),transparent)]" aria-hidden />
-              <h1 className="text-[10px] uppercase tracking-[.19em] text-[color:var(--muted)]">Bedrock to glass</h1>
-              <span className="text-[color:var(--brand-secondary)]" aria-hidden>◆</span>
-            </div>
+            <h1 aria-label="SommAtlas" className="font-wordmark flex items-baseline text-[2.9rem] leading-none tracking-[-.06em] text-[color:var(--foreground)] md:text-[3.5rem]">
+              <span className="wordmark-peak">S</span><span className="wordmark-low">O</span><span className="wordmark-mid">M</span><span className="wordmark-low">M</span><span className="wordmark-peak ml-[.13em]">A</span><span className="wordmark-low">T</span><span className="wordmark-mid">L</span><span className="wordmark-low">A</span><span className="wordmark-peak">S</span>
+            </h1>
+            <p className="mt-1 font-mono text-[8px] uppercase tracking-[.28em] text-[color:var(--oxidised-gold)]">Wine · place · evidence</p>
           </div>
 
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -199,42 +205,49 @@ export function AtlasExperience({ regions, claims, sources, challenges }: AtlasE
         </div>
       </header>
 
-      <div className="mx-auto grid max-w-[1500px] gap-4 px-5 pb-10 md:px-8 xl:grid-cols-[minmax(0,1fr)_420px]">
-        <section className="relative min-h-[580px] overflow-hidden rounded-2xl border border-[color:var(--line-strong)] bg-[image:var(--map-background)] p-5 shadow-[0_24px_80px_-45px_var(--brand-primary)] md:p-8">
+      <div className={`mx-auto grid max-w-[1500px] gap-4 px-5 pb-10 md:px-8 ${mapCollapsed ? "xl:grid-cols-[280px_minmax(0,1fr)]" : "xl:grid-cols-[minmax(0,1fr)_420px]"}`}>
+        <section className={`relative overflow-hidden rounded-2xl border border-[color:var(--line-strong)] bg-[image:var(--map-background)] p-5 shadow-[0_24px_80px_-45px_var(--oxidised-gold)] transition-[min-height] duration-300 ${mapCollapsed ? "min-h-[540px]" : "min-h-[580px] md:p-8"}`}>
           <div className="pointer-events-none absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(242,234,219,.06)_1px,transparent_1px),linear-gradient(90deg,rgba(242,234,219,.06)_1px,transparent_1px)] [background-size:42px_42px]" />
           <div className="relative flex items-start justify-between gap-4">
-            <div><p className="font-mono text-[10px] uppercase tracking-[0.24em]" style={{ color: active.colour }}>Geographic index</p><p className="mt-1 max-w-md text-sm text-[color:var(--muted)]">Select a place, then examine one wine expression at a time.</p></div>
-            <button onClick={() => setComparisonOpen((open) => !open)} className="flex items-center gap-2 rounded-full border border-[color:var(--line)] bg-black/10 px-3 py-2 text-xs transition hover:bg-white/5"><Scale size={14} className="text-[color:var(--oxidised-gold)]" /> Barolo / Chianti</button>
+            <div><p className="font-mono text-[10px] uppercase tracking-[0.24em]" style={{ color: active.colour }}>{mapCollapsed ? "Map rail" : "Geographic index"}</p><p className="mt-1 max-w-md text-sm text-[color:var(--muted)]">{mapCollapsed ? selected.name : "Select a place, then examine one wine expression at a time."}</p></div>
+            <div className="flex shrink-0 gap-2">
+              {!mapCollapsed && <button onClick={() => setComparisonOpen((open) => !open)} className="flex items-center gap-2 rounded-full border border-[color:var(--line)] bg-black/10 px-3 py-2 text-xs transition hover:bg-white/5"><Scale size={14} className="text-[color:var(--oxidised-gold)]" /> Barolo / Chianti</button>}
+              <button aria-label={mapCollapsed ? "Expand map" : "Collapse map"} title={mapCollapsed ? "Expand map" : "Collapse map"} onClick={() => setMapCollapsed((collapsed) => !collapsed)} className="rounded-full border border-[color:var(--line)] bg-black/10 p-2 text-[color:var(--muted)] transition hover:bg-white/5 hover:text-[color:var(--foreground)]">{mapCollapsed ? <PanelLeftOpen size={14} /> : <PanelLeftClose size={14} />}</button>
+            </div>
           </div>
 
-          <div className="relative mx-auto mt-1 h-[450px] max-w-3xl">
-            <CountryMap country="FR" className="left-[7%] top-[6%] w-[44%] aspect-square" maskClassName="bg-[color:var(--limestone)] opacity-20 [mask:url('/maps/france.svg')_center/100%_100%_no-repeat]" labelClassName="left-[25%] top-[17%] text-[color:var(--limestone)]/70" regions={regions} selectedId={selected.id} activeColour={active.colour} visibleTooltipId={activeMapTooltipId ?? (focusedContextId ? `context:${focusedContextId}` : null)} onTooltipChange={setActiveMapTooltipId} focusedContextId={focusedContextId} onContextFocus={setFocusedContextId} onSelect={selectRegion} />
-            <CountryMap country="IT" className="right-[7%] top-[1%] h-[94%] aspect-[500/620]" maskClassName="bg-[color:var(--ponca)] opacity-25 [mask:url('/maps/italy.svg')_center/100%_100%_no-repeat]" labelClassName="right-[8%] top-[16%] text-[color:var(--ponca)]/70" regions={regions} selectedId={selected.id} activeColour={active.colour} visibleTooltipId={activeMapTooltipId ?? (focusedContextId ? `context:${focusedContextId}` : null)} onTooltipChange={setActiveMapTooltipId} focusedContextId={focusedContextId} onContextFocus={setFocusedContextId} onSelect={selectRegion} />
+          <div className={`relative mx-auto mt-1 ${mapCollapsed ? "h-[370px]" : "h-[450px] max-w-3xl"}`}>
+            {mapCollapsed ? (
+              <CountryMap country={selected.country} className={selected.country === "FR" ? "left-[4%] top-[8%] w-[92%] aspect-square" : "left-[18%] top-[2%] h-[94%] aspect-[500/620]"} maskClassName={selected.country === "FR" ? "bg-[color:var(--limestone)] opacity-20 [mask:url('/maps/france.svg')_center/100%_100%_no-repeat]" : "bg-[color:var(--ponca)] opacity-25 [mask:url('/maps/italy.svg')_center/100%_100%_no-repeat]"} labelClassName={selected.country === "FR" ? "left-[24%] top-[17%] text-[color:var(--limestone)]/70" : "right-[5%] top-[16%] text-[color:var(--ponca)]/70"} regions={regions} selectedId={selected.id} activeColour={active.colour} visibleTooltipId={activeMapTooltipId} onTooltipChange={setActiveMapTooltipId} focusedContextId={focusedContextId} onContextFocus={setFocusedContextId} onSelect={selectRegion} showContext={false} />
+            ) : <>
+              <CountryMap country="FR" className="left-[7%] top-[6%] w-[44%] aspect-square" maskClassName="bg-[color:var(--limestone)] opacity-20 [mask:url('/maps/france.svg')_center/100%_100%_no-repeat]" labelClassName="left-[25%] top-[17%] text-[color:var(--limestone)]/70" regions={regions} selectedId={selected.id} activeColour={active.colour} visibleTooltipId={activeMapTooltipId ?? (focusedContextId ? `context:${focusedContextId}` : null)} onTooltipChange={setActiveMapTooltipId} focusedContextId={focusedContextId} onContextFocus={setFocusedContextId} onSelect={selectRegion} showContext />
+              <CountryMap country="IT" className="right-[7%] top-[1%] h-[94%] aspect-[500/620]" maskClassName="bg-[color:var(--ponca)] opacity-25 [mask:url('/maps/italy.svg')_center/100%_100%_no-repeat]" labelClassName="right-[8%] top-[16%] text-[color:var(--ponca)]/70" regions={regions} selectedId={selected.id} activeColour={active.colour} visibleTooltipId={activeMapTooltipId ?? (focusedContextId ? `context:${focusedContextId}` : null)} onTooltipChange={setActiveMapTooltipId} focusedContextId={focusedContextId} onContextFocus={setFocusedContextId} onSelect={selectRegion} showContext />
+            </>}
           </div>
-          <div className="relative mt-auto flex flex-col gap-3 border-t border-[color:var(--line)] pt-3 sm:flex-row sm:items-center sm:justify-between">
-            <label className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-[.14em] text-[color:var(--muted)]">
+          <div className={`relative mt-auto flex flex-col gap-3 border-t border-[color:var(--line)] pt-3 ${mapCollapsed ? "items-stretch" : "sm:flex-row sm:items-center sm:justify-between"}`}>
+            <label className={`flex font-mono text-[9px] uppercase tracking-[.14em] text-[color:var(--muted)] ${mapCollapsed ? "flex-col gap-2" : "items-center gap-2"}`}>
               Appellation index
-              <select aria-label="Find an appellation on the map" value={mapIndexValue} onChange={(event) => navigateMapIndex(event.target.value)} className="max-w-[220px] rounded-md border border-[color:var(--line)] bg-[color:var(--panel)] px-2 py-1.5 font-sans text-xs normal-case tracking-normal text-[color:var(--foreground)] outline-none focus:border-[color:var(--oxidised-gold)]">
+              <select aria-label="Find an appellation on the map" value={mapIndexValue} onChange={(event) => navigateMapIndex(event.target.value)} className="w-full max-w-[220px] rounded-md border border-[color:var(--line)] bg-[color:var(--panel)] px-2 py-1.5 font-sans text-xs normal-case tracking-normal text-[color:var(--foreground)] outline-none focus:border-[color:var(--oxidised-gold)]">
                 <optgroup label="Featured studies">{regions.map((region) => <option key={region.id} value={`study:${region.id}`}>{region.name}</option>)}</optgroup>
                 <optgroup label="Context appellations">{mapContextPoints.map((point) => <option key={point.id} value={`context:${point.id}`}>{point.label}</option>)}</optgroup>
               </select>
             </label>
-            <span className="text-[10px] text-[color:var(--muted)]">Hover or focus a dot to identify it · representative points</span>
+            {!mapCollapsed && <span className="text-[10px] text-[color:var(--muted)]">Hover or focus a dot to identify it · representative points</span>}
           </div>
         </section>
 
-        <aside className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--panel)] p-5 md:p-6 xl:row-span-2">
+        <aside className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--panel)] p-5 md:p-6">
           <div className="flex items-start justify-between gap-3"><div><h2 className="font-serif text-3xl tracking-tight">{selected.name}</h2><p className="mt-1 text-sm text-[color:var(--muted)]">{selected.location} · {countryLabel[selected.country]}</p></div><span className="rounded-full border border-[color:var(--line)] px-2 py-1 font-mono text-[9px] tracking-wider text-[color:var(--muted)]">{selected.entityType.replace("_", " ")}</span></div>
 
           <ExpressionSelector region={selected} expressions={availableExpressions} selected={selectedExpression} onSelect={setExpressionId} />
           <ProfileTabs activeTab={activeTab} onSelect={setActiveTab} />
           <ProfilePanel region={selected} activeTab={activeTab} expression={selectedExpression} claims={claims} sources={sources} />
-          {tabClaims.length > 0 ? <Evidence claims={tabClaims.slice(0, 2)} sources={selectedSources} /> : <EvidenceGap tab={activeTab} expression={selectedExpression} />}
+          {activeTab !== "producers" && (tabClaims.length > 0 ? <Evidence claims={tabClaims.slice(0, 2)} sources={selectedSources} /> : <EvidenceGap tab={activeTab} expression={selectedExpression} />)}
         </aside>
 
-        <section className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--panel)] p-5 md:p-6">
+        <section className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--panel)] p-5 md:p-6 xl:col-span-2">
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><p className="font-mono text-[10px] uppercase tracking-[.22em] text-[color:var(--oxidised-gold)]">Guided synthesis</p><h2 className="mt-1 font-serif text-2xl">Ask a better wine question.</h2></div><div className="flex rounded-lg border border-[color:var(--line)] p-1"><ModeButton active={mode === "sol"} onClick={() => setMode("sol")} label="Deep synthesis · Sol" /><ModeButton active={mode === "terra"} onClick={() => setMode("terra")} label="Quick tutor · Terra" /></div></div>
-          <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_auto]"><div className="rounded-xl border border-dashed border-[color:var(--line)] bg-black/10 p-4"><p className="text-sm leading-6 text-[color:var(--muted)]">{synthesisPrompt}</p><p className="mt-3 font-mono text-[10px] uppercase tracking-wider text-[color:var(--muted)]">Grounded in selected corpus · citations shown in result</p></div><button disabled={isGenerating} onClick={() => sendMessage({ text: synthesisPrompt })} className="flex items-center justify-center gap-2 rounded-xl bg-[color:var(--foreground)] px-5 py-3 text-sm font-semibold text-[color:var(--background)] transition hover:bg-[color:var(--limestone)] disabled:cursor-wait disabled:opacity-60"><Sparkles size={15} className={isGenerating ? "animate-pulse" : ""} /> {isGenerating ? "Tracing evidence…" : "Synthesize"}</button></div>
+          <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_auto]"><div className="rounded-xl border border-dashed border-[color:var(--line)] bg-black/10 p-4"><p className="text-sm leading-6 text-[color:var(--muted)]">{synthesisPrompt}</p><p className="mt-3 font-mono text-[10px] uppercase tracking-wider text-[color:var(--muted)]">Grounded in selected corpus · citations shown in result</p></div><button disabled={isGenerating} onClick={() => sendMessage({ text: synthesisPrompt })} className="flex items-center justify-center gap-2 rounded-xl bg-[color:var(--oxidised-gold)] px-5 py-3 text-sm font-semibold text-[color:var(--background)] transition hover:bg-[color:var(--limestone)] disabled:cursor-wait disabled:opacity-60"><Sparkles size={15} className={isGenerating ? "animate-pulse" : ""} /> {isGenerating ? "Tracing evidence…" : "Synthesize"}</button></div>
           {(latestAnswer || fallbackAnswer) && <div className="mt-5 rounded-xl border border-[color:var(--line)] bg-black/15 p-4"><div className="mb-3 flex items-center justify-between gap-3"><p className="font-mono text-[10px] uppercase tracking-[.18em] text-[color:var(--sage)]">{fallbackAnswer ? "Curated fallback" : mode === "sol" ? "Sol synthesis" : "Terra tutor"}</p>{fallbackAnswer && <span className="text-[10px] text-[color:var(--muted)]">Live model unavailable</span>}</div><MessageResponse className="text-sm leading-6 text-[color:var(--foreground)]">{latestAnswer ?? fallbackAnswer ?? ""}</MessageResponse></div>}
         </section>
       </div>
@@ -258,16 +271,17 @@ type CountryMapProps = {
   focusedContextId: MapContextPoint["id"] | null;
   onContextFocus: (pointId: MapContextPoint["id"]) => void;
   onSelect: (regionId: RegionId) => void;
+  showContext: boolean;
 };
 
-function CountryMap({ country, className, maskClassName, labelClassName, regions, selectedId, activeColour, visibleTooltipId, onTooltipChange, focusedContextId, onContextFocus, onSelect }: CountryMapProps) {
+function CountryMap({ country, className, maskClassName, labelClassName, regions, selectedId, activeColour, visibleTooltipId, onTooltipChange, focusedContextId, onContextFocus, onSelect, showContext }: CountryMapProps) {
   const countryRegions = regions.filter((region) => region.country === country);
 
   return (
     <div className={`absolute overflow-visible ${className}`}>
       <div aria-hidden className={`absolute inset-0 ${maskClassName}`} />
       <div className={`pointer-events-none absolute font-mono text-[10px] tracking-[.24em] ${labelClassName}`}>{country === "FR" ? "FRANCE" : "ITALY"}</div>
-      {country === "FR" && <ContextDots focusedId={focusedContextId} visibleTooltipId={visibleTooltipId} onTooltipChange={onTooltipChange} onFocus={onContextFocus} />}
+      {country === "FR" && showContext && <ContextDots focusedId={focusedContextId} visibleTooltipId={visibleTooltipId} onTooltipChange={onTooltipChange} onFocus={onContextFocus} />}
       {countryRegions.map((region) => (
         <Hotspot key={region.id} region={region} active={selectedId === region.id} colour={activeColour} tooltipVisible={visibleTooltipId === `study:${region.id}`} onTooltipChange={onTooltipChange} onSelect={() => onSelect(region.id)} />
       ))}
@@ -329,11 +343,11 @@ function ExpressionField({ label, value, database = false }: { label: string; va
 
 function ProfileTabs({ activeTab, onSelect }: { activeTab: ProfileTabId; onSelect: (tab: ProfileTabId) => void }) {
   return (
-    <nav aria-label="Appellation evidence" className="mt-5 grid grid-cols-4 gap-1 border-b border-[color:var(--line)]" role="tablist">
+    <nav aria-label="Appellation evidence" className="mt-5 grid grid-cols-5 gap-1 border-b border-[color:var(--line)]" role="tablist">
       {profileTabs.map((tab) => {
         const Icon = tab.icon;
         const isActive = activeTab === tab.id;
-        return <button key={tab.id} role="tab" aria-selected={isActive} onClick={() => onSelect(tab.id)} className={`flex min-w-0 flex-col items-center gap-1 border-b-2 px-1 py-2 text-[10px] transition ${isActive ? "border-[color:var(--brand-primary)] text-[color:var(--foreground)]" : "border-transparent text-[color:var(--muted)] hover:text-[color:var(--foreground)]"}`}><Icon size={14} style={{ color: isActive ? tab.colour : undefined }} /><span className="truncate">{tab.label}</span></button>;
+        return <button key={tab.id} role="tab" aria-selected={isActive} onClick={() => onSelect(tab.id)} className={`flex min-w-0 flex-col items-center gap-1 border-b-2 px-1 py-2 text-[10px] transition ${isActive ? "border-[color:var(--oxidised-gold)] text-[color:var(--foreground)]" : "border-transparent text-[color:var(--muted)] hover:text-[color:var(--foreground)]"}`}><Icon size={14} style={{ color: isActive ? tab.colour : undefined }} /><span className="truncate">{tab.label}</span></button>;
       })}
     </nav>
   );
@@ -350,9 +364,10 @@ function ProfilePanel({ region, activeTab, expression, claims, sources }: { regi
     <section role="tabpanel" className="border-b border-[color:var(--line)] py-5">
       {(activeTab === "chemistry" || activeTab === "structure") && expression && <p className="font-mono text-[8px] uppercase tracking-[.14em] text-[color:var(--muted)]">Scoped to {expression.label}</p>}
       {activeTab === "place" && <><SignalText>{region.layerHighlights.geology}</SignalText>{region.id === "barolo" && <BaroloSiteModel />}{region.id === "collio" && <MineralDecoder />}</>}
-      {activeTab === "chemistry" && <><SignalText>{chemistryText}</SignalText>{region.id === "barolo" && <MolecularFingerprint layer="chemistry" claims={claims} sources={sources} />}</>}
-      {activeTab === "structure" && <><SignalText>{region.layerHighlights.phenolics}</SignalText><p className="mt-2 text-[11px] leading-5 text-[color:var(--muted)]">{region.layerHighlights.palate}</p>{region.id === "barolo" && <MolecularFingerprint layer="phenolics" claims={claims} sources={sources} />}<StructureProfile region={region} /></>}
-      {activeTab === "rules" && <SignalText>{region.layerHighlights.rules}</SignalText>}
+      {activeTab === "chemistry" && <><SignalText>{chemistryText}</SignalText>{region.id === "barolo" && <MolecularFingerprint key="barolo-chemistry" layer="chemistry" signals={baroloMolecularSignals} claims={claims} sources={sources} />}{region.id === "chianti-classico" && <MolecularFingerprint key="chianti-chemistry" layer="chemistry" signals={chiantiMolecularSignals} claims={claims} sources={sources} />}</>}
+      {activeTab === "structure" && <><SignalText>{region.layerHighlights.phenolics}</SignalText><p className="mt-2 text-[11px] leading-5 text-[color:var(--muted)]">{region.layerHighlights.palate}</p>{region.id === "barolo" && <MolecularFingerprint key="barolo-phenolics" layer="phenolics" signals={baroloMolecularSignals} claims={claims} sources={sources} />}<StructureProfile region={region} /></>}
+      {activeTab === "rules" && <><SignalText>{region.layerHighlights.rules}</SignalText>{region.id === "chianti-classico" && <ChiantiClassicoRules />}</>}
+      {activeTab === "producers" && <ReferenceProducers region={region} />}
     </section>
   );
 }
@@ -380,9 +395,50 @@ function MineralDecoder() {
   return <div className="mt-4"><p className="font-mono text-[9px] uppercase tracking-[.18em] text-[color:var(--oxidised-gold)]">Three meanings of mineral</p><div className="mt-2 space-y-1.5">{meanings.map((meaning) => <div key={meaning.label} className="grid grid-cols-[76px_1fr] gap-2 rounded-md border border-[color:var(--line)] bg-black/10 px-2 py-1.5 text-[10px] leading-4"><span className="font-medium text-[color:var(--foreground)]">{meaning.label}</span><span className="text-[color:var(--muted)]">{meaning.note}</span></div>)}</div></div>;
 }
 
-function MolecularFingerprint({ layer, claims, sources }: { layer: MolecularLayer; claims: Claim[]; sources: Source[] }) {
-  const signals = baroloMolecularSignals.filter((signal) => signal.layer === layer);
-  const [selectedSignalId, setSelectedSignalId] = useState(signals[0]?.id);
+function ChiantiClassicoRules() {
+  return (
+    <div className="mt-4 space-y-3">
+      <div className="grid gap-2 sm:grid-cols-2">
+        <div className="rounded-lg border border-[color:var(--line)] bg-black/10 p-3"><p className="font-mono text-[8px] uppercase tracking-[.14em] text-[color:var(--oxidised-gold)]">Annata + Riserva</p><p className="mt-1 text-xs font-medium">80—100% Sangiovese</p><p className="mt-1 text-[10px] leading-4 text-[color:var(--muted)]">Up to 20% from the complete Attachment 1 list below.</p></div>
+        <div className="rounded-lg border border-[color:var(--line)] bg-black/10 p-3"><p className="font-mono text-[8px] uppercase tracking-[.14em] text-[color:var(--sage)]">Gran Selezione</p><p className="mt-1 text-xs font-medium">90—100% Sangiovese</p><p className="mt-1 text-[10px] leading-4 text-[color:var(--muted)]">Maximum 10% from: {chiantiClassicoGranSelezioneGrapes.join(", ")}.</p></div>
+      </div>
+      <div className="rounded-lg border border-[color:var(--line)] bg-black/10 p-3">
+        <div className="flex items-baseline justify-between gap-3"><p className="font-mono text-[9px] uppercase tracking-[.14em] text-[color:var(--foreground)]">Permitted complementary red grapes</p><span className="shrink-0 font-mono text-[8px] text-[color:var(--muted)]">{chiantiClassicoComplementaryRedGrapes.length} varieties</span></div>
+        <ul className="mt-3 grid max-h-64 grid-cols-2 gap-x-3 gap-y-1.5 overflow-y-auto pr-2 sm:grid-cols-3">
+          {chiantiClassicoComplementaryRedGrapes.map((grape) => <li key={grape} className="border-b border-[color:var(--line)] pb-1 text-[9px] leading-4 text-[color:var(--muted)]">{grape}</li>)}
+        </ul>
+        <p className="mt-3 text-[9px] leading-4 text-[color:var(--muted)]">Legal permission is not evidence of common use. The list answers what may be planted and blended, not what is typical in the glass.</p>
+      </div>
+    </div>
+  );
+}
+
+function ReferenceProducers({ region }: { region: Region }) {
+  const producers = referenceProducers.filter((producer) => producer.regionId === region.id);
+
+  return (
+    <div className="mt-2">
+      <div className="flex items-baseline justify-between gap-3"><p className="font-mono text-[9px] uppercase tracking-[.16em] text-[color:var(--sage)]">Three comparative anchors</p><span className="text-[8px] text-[color:var(--muted)]">Editorial selection · not a ranking</span></div>
+      <div className="mt-3 space-y-2">
+        {producers.map((producer, index) => (
+          <article key={producer.name} className="rounded-lg border border-[color:var(--line)] bg-black/10 p-3">
+            <div className="flex items-start gap-3">
+              <span className="font-mono text-[9px] text-[color:var(--oxidised-gold)]">0{index + 1}</span>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1"><a href={producer.url} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs font-medium hover:text-[color:var(--limestone)] hover:underline">{producer.name}<ArrowUpRight size={10} /></a><span className="font-mono text-[8px] uppercase tracking-[.08em] text-[color:var(--muted)]">{producer.lens}</span></div>
+                <p className="mt-2 text-[10px] leading-4 text-[color:var(--muted)]">{producer.editorialNote}</p>
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MolecularFingerprint({ layer, signals: signalLibrary, claims, sources }: { layer: MolecularLayer; signals: readonly MolecularSignal[]; claims: Claim[]; sources: Source[] }) {
+  const signals = signalLibrary.filter((signal) => signal.layer === layer);
+  const [selectedSignalId, setSelectedSignalId] = useState<string | undefined>(signals[0]?.id);
   const selectedSignal = signals.find((signal) => signal.id === selectedSignalId) ?? signals[0];
   const claim = claims.find((candidate) => candidate.id === selectedSignal?.claimId);
   const source = sources.find((candidate) => claim?.sourceIds.includes(candidate.id));
@@ -410,4 +466,4 @@ function Insight({ region }: { region: Region }) { return <div className="rounde
 
 function ChallengeCard({ challenge, answer, onAnswer, claims, sources }: { challenge: Challenge; answer: boolean | null; onAnswer: (answer: boolean) => void; claims: Claim[]; sources: Source[] }) { const relevant = claims.filter((claim) => challenge.claimIds.includes(claim.id)); const sourceIds = new Set(relevant.flatMap((claim) => claim.sourceIds)); const relevantSources = sources.filter((source) => sourceIds.has(source.id)); const revealed = answer !== null; return <section className="mx-auto mb-12 max-w-[760px] px-5"><div className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--panel)] p-5 md:p-6"><div className="flex gap-3"><CircleHelp className="mt-0.5 shrink-0 text-[color:var(--oxidised-gold)]" size={20} /><div><p className="font-mono text-[10px] uppercase tracking-[.2em] text-[color:var(--oxidised-gold)]">Evidence challenge</p><h2 className="mt-2 font-serif text-xl">{challenge.question}</h2></div></div>{!revealed ? <div className="mt-5 flex gap-2"><button onClick={() => onAnswer(true)} className="rounded-lg border border-[color:var(--line)] px-4 py-2 text-sm hover:bg-white/5">Yes</button><button onClick={() => onAnswer(false)} className="rounded-lg border border-[color:var(--line)] px-4 py-2 text-sm hover:bg-white/5">No</button></div> : <div className="mt-5 rounded-xl border border-[color:var(--line)] bg-black/10 p-4"><p className="text-sm font-medium" style={{ color: answer === challenge.answer ? "var(--sage)" : "var(--garnet)" }}>{answer === challenge.answer ? "Correct." : `Not quite — ${challenge.answerLabel}.`}</p><p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">{challenge.explanation}</p>{relevant.map((claim) => <p key={claim.id} className="mt-3 border-l-2 border-[color:var(--oxidised-gold)] pl-3 text-xs text-[color:var(--limestone)]">{claim.evidence.locator}</p>)}<div className="mt-3 flex flex-wrap gap-2">{relevantSources.map((source) => <a key={source.id} href={source.url} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-[10px] text-[color:var(--limestone)] hover:underline">{source.publisher}<ArrowUpRight size={10} /></a>)}</div></div>}</div></section>; }
 
-function ModeButton({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) { return <button onClick={onClick} className={`rounded-md px-2.5 py-1.5 text-[10px] font-medium transition sm:text-xs ${active ? "bg-[color:var(--foreground)] text-[color:var(--background)]" : "text-[color:var(--muted)] hover:text-[color:var(--foreground)]"}`}>{label}</button>; }
+function ModeButton({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) { return <button onClick={onClick} className={`rounded-md px-2.5 py-1.5 text-[10px] font-medium transition sm:text-xs ${active ? "bg-[color:var(--oxidised-gold)] text-[color:var(--background)]" : "text-[color:var(--muted)] hover:text-[color:var(--foreground)]"}`}>{label}</button>; }

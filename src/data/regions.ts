@@ -61,7 +61,7 @@ export const regions = [
     map: { longitude: 11.29, latitude: 43.47, anchorLabel: "Castellina in Chianti" },
     layerHighlights: {
       geology: "A mosaic of sandstone, limestone, marl, schist and alluvial material—not one soil.",
-      chemistry: "A disubstituted, low-acylation anthocyanin profile rewards careful colour management.",
+      chemistry: "Treat Sangiovese aroma as a pathway, not a descriptor list: grape-derived β-damascenone sits inside a finished-wine pattern that also includes fermentation esters such as ethyl butanoate, isoamyl acetate, ethyl octanoate and 2-phenylethyl acetate, plus the volatile thiol 3MH in one Tuscan study.",
       phenolics: "Polymerised proanthocyanins can read as drying, harsh or dynamic depending on matrix.",
       palate: "Fresh acidity, red fruit and savoury tension define the training archetype.",
       rules: "80-100% Sangiovese; current complementary grapes must be red-berried.",
@@ -70,6 +70,9 @@ export const regions = [
       "chianti-sangiovese-80",
       "chianti-no-white-grapes",
       "chianti-site-rules",
+      "chianti-complementary-red-list",
+      "sangiovese-volatile-model",
+      "sangiovese-3mh-tuscan-study",
       "sangiovese-anthocyanin-profile",
       "barolo-chianti-astringency-comparison",
     ],

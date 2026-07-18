@@ -178,9 +178,15 @@ body {
   font-family: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
 }
 
-.font-wordmark {
-  font-family: var(--font-pinyon), "Snell Roundhand", "URW Chancery L", cursive;
+.font-wordmark,
+.font-serif {
+  font-family: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
+  font-weight: 500;
 }
+
+.wordmark-peak { font-size: 1.25em; }
+.wordmark-mid { font-size: 1em; }
+.wordmark-low { font-size: 0.72em; }
 
 .atlas-shell {
   transition: background-color 240ms ease, color 240ms ease;
