@@ -27,7 +27,8 @@ judge-visible value today.
 The entire demo follows one page and five beats:
 
 1. **Atlas:** France and Italy, four hero regions, and a one-line proposition.
-2. **Collio:** select ponca and show geology with careful causal language.
+2. **Collio:** select ponca, decode the three meanings of “mineral,” and show
+   geology through water, roots and vine response rather than direct flavour transfer.
 3. **Jura:** select sotolon and distinguish sous-voile from ouillé styles.
 4. **Compare:** Barolo versus Chianti Classico across structure and pigments;
    use Barolo to expose why a formation-to-style shortcut fails before moving

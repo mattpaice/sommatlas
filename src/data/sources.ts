@@ -35,6 +35,17 @@ export const sources = [
     language: "en",
   },
   {
+    id: "maltman-geology-typicity-2008",
+    title: "The Role of Vineyard Geology in Wine Typicity",
+    publisher: "Journal of Wine Research",
+    url: "https://doi.org/10.1080/09571260802163998",
+    sourceType: "peer_reviewed_review",
+    publishedAt: "2008",
+    effectiveAt: null,
+    retrievedAt: "2026-07-18",
+    language: "en",
+  },
+  {
     id: "chianti-classico-spec-2023",
     title: "Production Code for Chianti Classico DOCG Wines",
     publisher: "Consorzio Vino Chianti Classico",

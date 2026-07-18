@@ -28,7 +28,7 @@ export const demoFallbacks = [
   {
     id: "explain-ponca",
     prompts: ["what is ponca", "collio geology", "does minerality come from rocks"],
-    answer: "Ponca is Collio's local name for flysch: alternating marl and sandstone layers formed from ancient marine sediments. It matters as physical growing context—weathering, rooting and water relations—not as a flavour additive. A mineral sensory impression may be real, but the evidence does not support literal rock flavour passing unchanged through roots into wine.",
-    claimIds: ["collio-ponca-flysch", "collio-ponca-age-composition", "collio-no-literal-mineral-flavour"],
+    answer: "Ponca is Collio's local name for flysch: alternating marl and sandstone layers formed from ancient marine sediments. It matters as physical growing context—weathering, rooting and water relations—not as a flavour additive. Keep three meanings separate: geological minerals in rocks, mineral nutrient elements used by vines, and 'minerality' as a sensory descriptor. A mineral impression may be real, but the evidence does not support literal rock flavour passing unchanged through roots into wine.",
+    claimIds: ["collio-ponca-flysch", "collio-ponca-age-composition", "collio-no-literal-mineral-flavour", "collio-three-minerals"],
   },
 ] satisfies DemoFallback[];

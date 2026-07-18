@@ -44,6 +44,6 @@ export const challenges = [
     answer: false,
     answerLabel: "No — ponca is geological context, not a flavour additive.",
     explanation: "Ponca can shape the physical rooting and water environment. Turning that into a direct rock-to-glass flavour mechanism skips vine physiology, fermentation, élevage and sensory interpretation.",
-    claimIds: ["collio-ponca-flysch", "collio-no-literal-mineral-flavour"],
+    claimIds: ["collio-ponca-flysch", "collio-no-literal-mineral-flavour", "collio-three-minerals"],
   },
 ] satisfies Challenge[];

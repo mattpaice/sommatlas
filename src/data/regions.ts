@@ -142,6 +142,8 @@ export const regions = [
       "collio-ponca-flysch",
       "collio-ponca-age-composition",
       "collio-no-literal-mineral-flavour",
+      "collio-three-minerals",
+      "collio-geology-indirect-pathway",
     ],
     archetype: {
       name: "Dry Collio white",

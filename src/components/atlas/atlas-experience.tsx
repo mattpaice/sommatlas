@@ -151,7 +151,7 @@ export function AtlasExperience({ regions, claims, sources, challenges }: AtlasE
           <div className="mt-2 flex items-start justify-between gap-3"><div><h2 className="font-serif text-3xl tracking-tight">{selected.name}</h2><p className="mt-1 text-sm text-[color:var(--muted)]">{selected.location} · {countryLabel[selected.country]}</p></div><span className="rounded-full border border-[color:var(--line)] px-2 py-1 font-mono text-[9px] tracking-wider text-[color:var(--muted)]">{selected.entityType.replace("_", " ")}</span></div>
           <p className="mt-5 text-sm leading-6 text-[color:var(--muted)]">{selected.summary}</p>
 
-          <div className="mt-6 border-y border-[color:var(--line)] py-4"><p className="font-mono text-[10px] uppercase tracking-[.2em] text-[color:var(--muted)]">{active.label} signal</p><p className="mt-2 text-sm leading-6">{selected.layerHighlights[activeLayer]}</p>{selected.id === "barolo" && activeLayer === "geology" && <BaroloSiteModel />}</div>
+          <div className="mt-6 border-y border-[color:var(--line)] py-4"><p className="font-mono text-[10px] uppercase tracking-[.2em] text-[color:var(--muted)]">{active.label} signal</p><p className="mt-2 text-sm leading-6">{selected.layerHighlights[activeLayer]}</p>{selected.id === "barolo" && activeLayer === "geology" && <BaroloSiteModel />}{selected.id === "collio" && activeLayer === "geology" && <MineralDecoder />}</div>
           <div className="mt-5"><p className="font-mono text-[10px] uppercase tracking-[.2em] text-[color:var(--muted)]">Primary grapes</p><div className="mt-2 flex flex-wrap gap-2">{selected.grapes.map((grape) => <span key={grape} className="rounded-full bg-white/[.06] px-2.5 py-1 text-xs">{grape}</span>)}</div></div>
 
           <Evidence claims={layerClaims.slice(0, 2)} sources={selectedSources} />
@@ -175,8 +175,17 @@ function Hotspot({ region, active, colour, onSelect }: { region: Region; active:
 }
 
 function BaroloSiteModel() {
-  const factors = ["Formation", "Soil evolution", "Slope + elevation", "Exposure + microclimate", "Bounded hypothesis"];
+  const factors = ["Formation", "Soil properties", "Water + root environment", "Slope + microclimate", "Vine response + farming", "Bounded hypothesis"];
   return <div className="mt-4"><p className="font-mono text-[9px] uppercase tracking-[.18em] text-[color:var(--oxidised-gold)]">Site before style</p><ol className="mt-2 grid grid-cols-2 gap-1.5">{factors.map((factor, index) => <li key={factor} className={`rounded-md border border-[color:var(--line)] bg-black/10 px-2 py-1.5 text-[10px] leading-4 ${index === factors.length - 1 ? "col-span-2 text-[color:var(--sage)]" : "text-[color:var(--muted)]"}`}><span className="mr-1.5 font-mono text-[color:var(--oxidised-gold)]">{index + 1}</span>{factor}</li>)}</ol></div>;
+}
+
+function MineralDecoder() {
+  const meanings = [
+    { label: "Geological", note: "Crystalline compounds in rock and soil" },
+    { label: "Nutritional", note: "Bioavailable elements used by the vine" },
+    { label: "Sensory", note: "A metaphor whose cause is not specified" },
+  ];
+  return <div className="mt-4"><p className="font-mono text-[9px] uppercase tracking-[.18em] text-[color:var(--oxidised-gold)]">Three meanings of mineral</p><div className="mt-2 space-y-1.5">{meanings.map((meaning) => <div key={meaning.label} className="grid grid-cols-[76px_1fr] gap-2 rounded-md border border-[color:var(--line)] bg-black/10 px-2 py-1.5 text-[10px] leading-4"><span className="font-medium text-[color:var(--foreground)]">{meaning.label}</span><span className="text-[color:var(--muted)]">{meaning.note}</span></div>)}</div></div>;
 }
 
 function Evidence({ claims, sources }: { claims: Claim[]; sources: Source[] }) {

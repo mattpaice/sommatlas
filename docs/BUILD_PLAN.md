@@ -76,8 +76,11 @@ time allows. Breadth is a post-hackathon task.
 ### 2. Region profile
 
 - Geological formation and site context.
-- A Barolo “site before style” chain: formation, soil evolution, slope/elevation,
-  exposure/microclimate, then a bounded sensory hypothesis.
+- A Barolo “site before style” chain: formation, soil physical properties,
+  water/root environment, vine response and farming, then a bounded sensory
+  hypothesis.
+- A Collio “three meanings of mineral” decoder separating geological minerals,
+  vine nutrient elements and sensory metaphor.
 - Principal grapes and wine archetypes.
 - Aroma compound families with evidence strength.
 - Palate and phenolic fingerprints.
