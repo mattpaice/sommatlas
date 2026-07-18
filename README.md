@@ -42,40 +42,5 @@ anchors for Burgundy, Bordeaux and the Rhône. Barolo's chemistry and phenolics
 layers expose an interactive, primary-research-backed molecular fingerprint:
 named aroma precursors, volatiles, anthocyanins and proanthocyanidin units.
 
-## Adding map locations
-
-Map markers are geographic data, not screen positions. Add a representative
-WGS84 longitude/latitude and a named locality to `src/data/regions.ts` or
-`src/data/map-context.ts`; `src/lib/map-projection.ts` applies the exact
-Mercator transform used to generate each Natural Earth country SVG. This keeps
-locations stable across viewport sizes and avoids hand-tuned percentages.
-
-The map stays deliberately label-free until a point is hovered or focused. A
-separate appellation index supports name-first navigation without placing
-persistent controls or callout lines over the geography.
-
-## Evidence principles
-
-- Never imply that soil directly creates an aroma compound.
-- Separate grape-derived, fermentation-derived, maturation-derived, and
-  environmental effects.
-- Treat winemaking choices as dated and scoped practices, not timeless regional
-  facts.
-- Link appellation requirements to the current official specification and retain
-  the original-language clause.
-- Label measured facts, published associations, regional consensus, and
-  interpretation differently.
-
-## Status
-
-Five-hour hackathon prototype, deployed on Vercel.
-
-## Run locally
-
-```bash
-npm install
-npm run dev
-```
-
 The static atlas and curated synthesis work without a database. Live Sol/Terra
 calls use Vercel AI Gateway through the linked project's OIDC credentials.
